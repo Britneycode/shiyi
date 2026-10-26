@@ -38,7 +38,7 @@
 
 ### 0.3 从 v7 沿用
 
-- D-003：manifest 不写 `minAppVersion`，启动时功能探测（§2.3）。
+- D-003（已修正）：原不写 `minAppVersion`（启动时功能探测 §2.3）；实测宿主要求用了 `pageIcon` / `cardForm:"edge-to-edge"` 必须声明 `minAppVersion: "0.1020.0"`，否则拒绝安装。
 - 只做中文（宿主没有 locale 接口，✅ Phase 0）。
 - 记忆守卫 `lib/agent-policy.js`（`agent:profile` → `memoryPolicy.enabled`，60s 缓存，✅ Phase 0）。
 - 会话类型 `lib/session-scope.js`（main / ch_ 群聊 / dm_ 私信 / bridge owner / bridge guests），只用于主对话工具的放行判断（§4.10）。
@@ -113,7 +113,8 @@
   "name": "拾遗",
   "version": "0.1.0",
   "entry": "index.js",
-  "icon": "assets/icon.png",
+  "icon": "ui/assets/icon.svg",
+  "minAppVersion": "0.1020.0",
   "description": "Hana 里的助手在这里陪你聊天，记住你手上的事——工作、学习、生活——到时候主动来问一句进度；真要干活，一键交给 Hana 主对话。数据只存在本机。",
   "capabilities": [
     "app/agents.read",
@@ -131,7 +132,7 @@
         "id": "chat",
         "title": "拾遗",
         "description": "和助手聊天，看看手上的事。",
-        "face": { "image": "assets/icon.png" },
+        "face": { "image": "assets/icon.svg" },
         "pageIcon": "assets/nav-icon.svg",
         "route": "/panel.html",
         "realization": "page",
@@ -145,8 +146,8 @@
         "id": "mini",
         "title": "拾遗·小窗",
         "description": "跟主对话并排用的小窗，同一份聊天记录。",
-        "face": { "image": "assets/icon.png" },
-        "route": "/panel.html?form=mini",
+        "face": { "image": "assets/icon.svg" },
+        "route": "/panel.html",
         "cardForm": "edge-to-edge"
       }
     ]
@@ -154,8 +155,9 @@
 }
 ```
 
-- 卡片字段照抄茶话会 manifest（✅ `realization:"page"`、`siteNavEntry`、`detached`、`detachedDefaultSize`、`cardForm:"flush" | "edge-to-edge"`、`titlebar:"solid"`）。茶话会两张卡用同一个 `route`，靠页面宽度切布局；拾遗加 `?form=mini` 便于区分（🧪 宿主是否保留 route 上的 query；不保留就退回按宽度判断）。
-- 不写 `minAppVersion`（D-003）。
+- 卡片字段照抄茶话会 manifest（✅ `realization:"page"`、`siteNavEntry`、`detached`、`detachedDefaultSize`、`cardForm:"flush" | "edge-to-edge"`、`titlebar:"solid"`）。茶话会两张卡用同一个 `route`，靠页面宽度切布局；拾遗原打算加 `?form=mini` 便于区分 —— **已验证宿主 route 不接受 query（含 `?` 整卡被丢弃），改为两张卡同用 `/panel.html`、小窗形态按视口宽度 ≤640px 判定**（`?form=mini` 仍兼容）。
+- 卡片的 `face.image` / `pageIcon` 由宿主相对**应用目录下的 `ui/`** 解析（应用级 `icon` 才相对包根），故图标须置于 `ui/assets/`，引用写作 `assets/icon.svg`。
+- 写 `minAppVersion: "0.1020.0"`（D-003 修正）：用了 `pageIcon`（0.1020.0 引入）与 `cardForm:"edge-to-edge"`（0.1017.0 引入），宿主要求声明该下限，否则拒绝安装。
 - 不声明 `network`：拾遗不直接联网，模型调用走宿主。
 
 ### 2.1 能力表
@@ -201,7 +203,6 @@ shiyi/
 ├─ index.js                 # apply(ctx)：装载期只注册；boot() 延迟启动
 ├─ README.md                # 权限、隐私、费用、与茶话会同装说明
 ├─ CHANGELOG.md
-├─ assets/  icon.png  nav-icon.svg
 ├─ lib/
 │  ├─ config.js             # 常量、默认设置、预设档位、SECRET_PATTERNS
 │  ├─ util.js               # 时间、文本清洗、id、bigram、withTimeout
@@ -236,6 +237,7 @@ shiyi/
 ├─ ui/
 │  ├─ panel.html            # 整页 + 小窗（同一页面，按 form / 宽度切布局）
 │  ├─ panel.js  panel.css
+│  ├─ assets/               # icon.svg  nav-icon.svg（卡片图标相对 ui/ 解析）
 │  └─ vendor/               # 不依赖 CDN
 └─ tests/                   # node:test：纯函数、提取解析、护栏、对账、假 ctx 端到端
 ```

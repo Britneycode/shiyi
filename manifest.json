@@ -4,7 +4,8 @@
   "name": "拾遗",
   "version": "0.1.0",
   "entry": "index.js",
-  "icon": "assets/icon.svg",
+  "minAppVersion": "0.1020.0",
+  "icon": "ui/assets/icon.svg",
   "description": "Hana 里的助手在这里陪你聊天，记住你手上的事——工作、学习、生活——到时候主动来问一句进度；真要干活，一键交给 Hana 主对话。数据只存在本机。",
   "capabilities": [
     "app/agents.read",
@@ -37,7 +38,7 @@
         "title": "拾遗·小窗",
         "description": "跟主对话并排用的小窗，同一份聊天记录。",
         "face": { "image": "assets/icon.svg" },
-        "route": "/panel.html?form=mini",
+        "route": "/panel.html",
         "cardForm": "edge-to-edge"
       }
     ]

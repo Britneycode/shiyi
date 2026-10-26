@@ -86,9 +86,19 @@ const REASON_LABELS = {
 const PRESET_LABELS = { restrained: '克制（发3 / 生6 / 评12）', moderate: '适中（发6 / 生12 / 评24）', active: '积极（发12 / 生24 / 评48）' };
 const DAY_MS = 24 * 3600_000;
 
+/* 宿主不保留卡片 route 上的 query（route 不得含 ?），小窗形态按视口宽度判定（PLAN §2 备注的退路）。
+   阈值与 panel.css 的 640px 断点一致。 */
+const MINI_MAX_WIDTH = 640;
+function detectForm() {
+  const q = qs.get('form');
+  if (q === 'mini') return 'mini';
+  if (q === 'page') return 'page';
+  return window.innerWidth <= MINI_MAX_WIDTH ? 'mini' : 'page';
+}
+
 /* ───────────────── 4. 状态（初始为空，boot 后从接口拉取） ───────────────── */
 const S = {
-  form: qs.get('form') === 'mini' ? 'mini' : 'page',   // 整页三栏 | 并排小窗
+  form: detectForm(),                            // 整页三栏 | 并排小窗
   activeAgentId: null,
   stripOpen: null,            // null | 'recent' | 'upcoming'
   rightOpen: true,
@@ -1502,6 +1512,13 @@ function scrollChatBottom() {
 }
 
 /* ───────────────── 10. boot ───────────────── */
+window.addEventListener('resize', () => {
+  const next = detectForm();
+  if (next !== S.form) {
+    S.form = next;
+    render();
+  }
+});
 render();
 loadAll().then(() => {
   scrollChatBottom();

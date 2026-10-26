@@ -37,7 +37,7 @@
                         └────────┬─────────┘
                                  │ ctx{dataDir, logger, bus, models, inputBanner…}
                                  ▼
-   ui/panel.html + panel.css + panel.js    ← 三栏整页 / 并排小窗（?form=mini）
+   ui/panel.html + panel.css + panel.js    ← 三栏整页 / 并排小窗（视口 ≤ 640px 自动切小窗）
                                  │ REST + X-Hana-App-Surface-Session
                                  ▼
                          routes/ui.js (35 端点)
@@ -106,7 +106,7 @@ shiyi/
 │       ├── gate.js          # 10 道护栏
 │       └── banner.js        # 输入框横幅（在场租约 75s、30s 批次、回执摘横幅）
 ├── ui/
-│   ├── panel.html / panel.css / panel.js   # 三栏整页 | ?form=mini 小窗
+│   ├── panel.html / panel.css / panel.js   # 三栏整页 | 窄窗自动切小窗
 ├── tests/                   # node:test；helpers.js 提供 fakeCtx/tmpdir
 ├── PLAN.md                  # v9 规格（唯一真相源，1162 行）
 └── AGENTS.md                # AI 接手协议

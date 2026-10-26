@@ -22,7 +22,7 @@ foreach ($f in @('index.js', 'manifest.json', 'package.json')) {
   if (-not (Test-Path $p)) { throw "missing required file: $p" }
   [void]$files.Add($p)
 }
-foreach ($d in @('assets', 'lib', 'routes', 'ui')) {
+foreach ($d in @('lib', 'routes', 'ui')) {
   $dir = Join-Path $Root $d
   if (-not (Test-Path $dir)) { throw "missing required dir: $dir" }
   Get-ChildItem -Path $dir -Recurse -File | ForEach-Object { [void]$files.Add($_.FullName) }

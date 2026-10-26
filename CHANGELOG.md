@@ -23,10 +23,17 @@
 
 ### Step 4 · P8+P9（本步）
 - `routes/ui.js`：34 个 REST 端点，统一 `{ok,code,message}` 信封，`BASE=/api/apps/shiyi/routes`，自动扫描 `registerRoutes(app, ctx)`。
-- `ui/panel.html / panel.css / panel.js`：v9 原型改造为真接口驱动——三栏整页 + `?form=mini` 并排小窗；宿主主题接入 applyHostTheme + detectTone；明暗 token 来自 DESIGN.md。
+- `ui/panel.html / panel.css / panel.js`：v9 原型改造为真接口驱动——三栏整页 + 并排小窗（宿主 route 不接受 query，小窗形态按视口宽度 ≤640px 判定，`?form=mini` 仍兼容）；宿主主题接入 applyHostTheme + detectTone；明暗 token 来自 DESIGN.md。
   - 「刚记下」从 `updatedAt`（24h 内）派生，「接下来」从 `followUp/followUpAt/snoozedUntil` 派生——不依赖后端不存在的前端专用字段（fuzzyWindow/exactRemindText/recentOp/windowKey 裁决为客户端派生）。
   - 主动消息 badge 用 REASON_LABELS 客户端映射；气泡按空行拆；交接卡走 `/api/handoffs/:id/confirm|cancel`。
 - README.md、CHANGELOG.md 首版；`node --test tests/*.test.js` 全量验收通过。
+
+### 宿主适配修复（安装前）
+- 安装包：条目名须用 `/` 分隔。宿主解包器 `yauzl`（`strictFileNames:true`）拒绝含 `\` 的条目名，`Compress-Archive` 打的包会被判 `INSTALL_ARCHIVE_INVALID`。改用 `tools/pack.ps1`（.NET `ZipArchive`）。
+- 卡片图标：宿主的 `face.image` / `pageIcon` 相对 **app 目录下的 `ui/`** 解析（应用级 `icon` 才相对包根）。图标移入 `ui/assets/`，manifest 中应用级 `icon` 改为 `ui/assets/icon.svg`。
+- 卡片 route：宿主不接受含 query 的 route（`/panel.html?form=mini` 会被整卡丢弃）。两张卡统一用 `/panel.html`，小窗形态改由视口宽度判定。
+- manifest 增 `minAppVersion: "0.1020.0"`：用了 `pageIcon` 与 `cardForm:"edge-to-edge"`，宿主要求声明该下限（PLAN D-003「不写 minAppVersion」据此修正）。
+- 宿主自带 `scripts/validate-app.mjs` 复验：`--archive` → **0 error**（UI 冒烟需 Electron，本机不具备，未跑）。
 
 ### 已知限制（Step 4 裁决）
 - routes 未暴露全局 snooze 端点（engine.snoozeAll 存在但无 REST）：前端「稍后再说」按钮仅作本地提示态，不持久化到引擎。

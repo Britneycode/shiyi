@@ -22,7 +22,7 @@ shiyi/
 ├── ui/
 │   ├── panel.html           # 面板壳
 │   ├── panel.css            # v9 剥离演示样式后生成
-│   └── panel.js             # v9 原型改造：接真 API，三栏 / ?form=mini
+│   └── panel.js             # v9 原型改造：接真 API，三栏 / 窄窗小窗
 ├── tests/
 │   ├── helpers.js           # fakeCtx / tmpdir
 │   ├── step1.test.js        # P1+存储层 46 用例
