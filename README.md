@@ -61,6 +61,21 @@
 
 零外部依赖，原生 ES Module。把整个 `shiyi/` 目录放到 HanaAgent v2 的 `apps/` 下即可（若以独立仓库分发，`git clone` 到 `apps/shiyi`）。
 
+### 从宿主市场安装（可自动提示更新）
+
+HanaAgent 设置 → 扩展 → 浏览市场 → 来源 → 添加来源，填：
+
+| 字段 | 值 |
+|---|---|
+| 名称 | 拾遗 |
+| 地址 | `https://raw.githubusercontent.com/Britneycode/shiyi/main/market/index.v2.json` |
+
+（raw 取不到时改用 `https://cdn.jsdelivr.net/gh/Britneycode/shiyi@main/market/index.v2.json`。）
+
+然后在市场里装拾遗：宿主里若已有本地装的同名应用，页面上会出现「用市场版本替换」，用它替换；没有就点「安装」，只需一次确认。
+
+**从市场源装过之后**，以后发新版本时宿主会在市场页提示「可更新」，点更新、确认一次即就地覆盖安装（失败自动回滚），用户数据不受影响。纯本地 zip 安装的实例没有这条通道 —— 宿主的更新只认市场来源的安装记录。
+
 ### 启动与验收
 
 ```bash
