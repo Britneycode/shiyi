@@ -1,5 +1,14 @@
 # CHANGELOG — 拾遗 (shiyi)
 
+## v0.1.5（2026-10-26）
+
+- 面板布局修复（真机约 936 CSS px 视口下三栏被挤坏）：
+  - 右栏原在 >900px 时占 328px 固定列，中栏只剩约 390px。改为 **1120px 以下右栏不再占列**，而是按需展开的覆盖式抽屉；默认收起，`resize` 跨断点时联动。1440px 及以上仍是 v9 的三栏。
+  - 顶栏助手名加 `white-space: nowrap`，模型 badge 限宽省略号，不再把助手名压成竖排；顶栏按钮从「事 (N) · 知 (M)」长文案改为图标 + 计数，去掉与右栏分段标签的重复。
+  - 「刚记下 / 接下来」轻入口 pills 不再内部换行，整条轻入口允许换行，右侧「今天先别问」不再被挤出可视区。
+  - 输入框补 `min-width: 0`（flex 子项默认 `min-width:auto` 会把 min-content 当下限），placeholder 缩短，不再被竖切。
+- 验证：浏览器 mock 接口实测 936 / 1100 / 1440 CSS px 与 `?form=mini` 的排版；`node --test tests/*.test.js` → 149/149。真机窗口复验待新包安装。
+
 ## v0.1.4（2026-10-26）
 
 - 修复宿主内助手信息读取：`agent:profile` 补 `scope: "all"`。此前只传 `agentId`，宿主默认按本 App 的 `own` 范围查找，其他助手会报「does not belong to app shiyi」，模型与记忆设置因此读不到。新增宿主契约回归测试，`node --test tests/*.test.js` → **149/149 pass**。

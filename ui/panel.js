@@ -91,11 +91,16 @@ const DAY_MS = 24 * 3600_000;
 /* 宿主不保留卡片 route 上的 query（route 不得含 ?），小窗形态按视口宽度判定（PLAN §2 备注的退路）。
    阈值与 panel.css 的 640px 断点一致。 */
 const MINI_MAX_WIDTH = 640;
+/* 1120px 以下右栏改为覆盖式抽屉（panel.css 同值断点），不再占列 */
+const OVERLAY_MAX_WIDTH = 1120;
 function detectForm() {
   const q = qs.get('form');
   if (q === 'mini') return 'mini';
   if (q === 'page') return 'page';
   return window.innerWidth <= MINI_MAX_WIDTH ? 'mini' : 'page';
+}
+function rightIsOverlay(form = 'page') {
+  return form === 'page' && window.innerWidth <= OVERLAY_MAX_WIDTH;
 }
 
 /* ───────────────── 4. 状态（初始为空，boot 后从接口拉取） ───────────────── */
@@ -103,7 +108,7 @@ const S = {
   form: detectForm(),                            // 整页三栏 | 并排小窗
   activeAgentId: null,
   stripOpen: null,            // null | 'recent' | 'upcoming'
-  rightOpen: true,
+  rightOpen: !rightIsOverlay(),   // 覆盖式抽屉形态下默认收起，避免盖住聊天
   rightTab: 'things',         // 'things' | 'notes'
   areaFilter: 'all',
   noteQuery: '',
@@ -514,7 +519,7 @@ function renderCenterCol() {
           </select>
         ` : `
           <span class="avatar" style="width:30px;height:30px;font-size:13px;">${esc(agentAvatar(agent))}</span>
-          <div>
+          <div class="chat-head-titles">
             <h2 class="chat-agent-title">${esc(agent.name)}</h2>
           </div>
         `}
@@ -526,8 +531,8 @@ function renderCenterCol() {
       <div class="chat-head-right">
         ${S.form === 'mini'
           ? `<button class="btn btn-ghost btn-sm" data-act="open-settings">${icon('gear')}</button>`
-          : `<button class="btn btn-secondary btn-sm" data-act="toggle-right" aria-pressed="${S.rightOpen}">
-               ${icon('panelRight')} <span>事 (${S.things.filter(t => t.status !== 'done' && t.status !== 'dropped').length}) · 知 (${S.notes.length})</span>
+          : `<button class="btn btn-secondary btn-sm" data-act="toggle-right" aria-pressed="${S.rightOpen}" title="${S.rightOpen ? '收起' : '展开'}事与知面板">
+               ${icon('panelRight')}<span class="chat-head-count num">${S.things.filter(t => t.status !== 'done' && t.status !== 'dropped').length}·${S.notes.length}</span>
              </button>`
         }
       </div>
@@ -546,7 +551,7 @@ function renderCenterCol() {
     <div class="chat-input-bar">
       <div class="input-row">
         <textarea class="chat-textarea" id="chat-input" rows="1"
-          ${!agent.chatModel ? 'disabled placeholder="请在 Hana 里给该助手设置聊天模型后再开始对话"' : `placeholder="和${esc(agent.name)}聊聊手上的事，提到的进展或约定会自动记下…"`}></textarea>
+          ${!agent.chatModel ? 'disabled placeholder="请先在 Hana 里为该助手设置聊天模型"' : `placeholder="和${esc(agent.name)}聊聊，进展和约定会自动记下…"`}></textarea>
         <button class="btn btn-secondary" data-act="quick-handoff" ${!agent.chatModel ? 'disabled' : ''} title="把需要动手的任务交给 Hana 主对话">
           ${icon('handoff')} 交给 Hana…
         </button>
@@ -639,7 +644,7 @@ function renderRightCol() {
         <button role="tab" aria-selected="${S.rightTab === 'things'}" data-act="right-tab" data-tab="things">事 (${S.things.length})</button>
         <button role="tab" aria-selected="${S.rightTab === 'notes'}" data-act="right-tab" data-tab="notes">知 (${S.notes.length})</button>
       </div>
-      <div style="display:flex;gap:4px;">
+      <div class="panel-head-actions">
         <button class="btn btn-secondary btn-xs" data-act="new-thing">${icon('plus')} 记一事</button>
         <button class="icon-btn" data-act="toggle-right" title="收起面板">${icon('x')}</button>
       </div>
@@ -1516,8 +1521,12 @@ function scrollChatBottom() {
 /* ───────────────── 10. boot ───────────────── */
 window.addEventListener('resize', () => {
   const next = detectForm();
-  if (next !== S.form) {
+  const wasOverlay = rightIsOverlay(S.form);
+  const nextOverlay = rightIsOverlay(next);
+  if (next !== S.form || nextOverlay !== wasOverlay) {
+    // 跨过 1120px 断点：右栏从占列变抽屉时默认收起，回到宽屏时默认展开
     S.form = next;
+    S.rightOpen = !nextOverlay;
     render();
   }
 });

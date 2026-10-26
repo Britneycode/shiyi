@@ -196,7 +196,7 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 .workspace {
   width: 100%; height: 100%; display: grid;
   grid-template-columns: 216px minmax(0, 1fr) 328px;
-  background: var(--bg); overflow: hidden;
+  background: var(--bg); overflow: hidden; position: relative;
   transition: max-width var(--duration-slow) var(--ease-standard);
 }
 .workspace.right-collapsed {
@@ -278,14 +278,18 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   height: 54px; padding: 0 16px; border-bottom: 1px solid var(--border);
   background: var(--bg); z-index: 6;
 }
-.chat-head-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.chat-agent-title { font-family: var(--font-serif); font-size: 17px; font-weight: 600; color: var(--hana-text); margin: 0; }
-.chat-agent-meta { font-size: var(--fs-caption); color: var(--sy-text-2); display: flex; align-items: center; gap: 6px; }
-.chat-head-right { display: flex; align-items: center; gap: 6px; }
+.chat-head-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
+.chat-head-titles { min-width: 0; flex: none; }
+.chat-agent-title { font-family: var(--font-serif); font-size: 17px; font-weight: 600; color: var(--hana-text); margin: 0; white-space: nowrap; }
+.chat-agent-meta { font-size: var(--fs-caption); color: var(--sy-text-2); display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; overflow: hidden; }
+.chat-agent-meta .badge { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-head-right { display: flex; align-items: center; gap: 6px; flex: none; }
+.chat-head-count { font-variant-numeric: tabular-nums; letter-spacing: .02em; }
 
 /* 小窗专属助手选择器和抽屉入口 */
 .mini-agent-select {
   display: inline-flex; align-items: center; gap: 8px; padding: 4px 8px;
+  max-width: 100%; min-width: 0;
   border-radius: var(--radius-input); border: 1px solid var(--border);
   background: var(--bg-card); font-family: var(--font-serif); font-weight: 600;
 }
@@ -295,8 +299,9 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px;
   min-height: 38px; padding: 5px 16px; background: var(--bg-card);
   border-bottom: 1px solid var(--border); font-size: var(--fs-caption); z-index: 5;
+  flex-wrap: wrap;
 }
-.light-strip-pills { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.light-strip-pills { display: flex; align-items: center; gap: 6px; flex: none; flex-wrap: nowrap; }
 .strip-trigger {
   display: inline-flex; align-items: center; gap: 6px;
   height: 28px; padding: 0 10px; border-radius: var(--radius-input);
@@ -317,7 +322,7 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--sy-ink);
 }
 .strip-divider { color: var(--border); user-select: none; }
-.strip-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.strip-right { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: none; }
 
 /* 展开面板：刚记下 & 接下来 */
 .light-tray {
@@ -494,9 +499,10 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   flex: none; padding: 10px 16px 14px; background: var(--bg);
   border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;
 }
-.input-row { display: flex; align-items: flex-end; gap: 8px; }
+.input-row { display: flex; align-items: flex-end; gap: 8px; min-width: 0; }
+.input-row .btn { flex: none; }
 .chat-textarea {
-  flex: 1; min-height: 38px; max-height: 110px; padding: 8px 12px;
+  flex: 1 1 0; min-width: 0; min-height: 38px; max-height: 110px; padding: 8px 12px;
   border-radius: var(--radius-card); border: 1px solid var(--border);
   background: var(--bg-card); color: var(--text); font-size: var(--fs-body);
   line-height: 1.45; resize: none; outline: none;
@@ -527,6 +533,7 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px;
   height: 54px; padding: 0 14px; border-bottom: 1px solid var(--border);
 }
+.panel-head-actions { display: flex; align-items: center; gap: 4px; flex: none; }
 .panel-subbar {
   flex: none; padding: 10px 14px 8px; border-bottom: 1px solid var(--border);
   display: flex; flex-direction: column; gap: 8px;
@@ -662,9 +669,17 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   text-decoration: underline; padding: 0; font-size: var(--fs-caption);
 }
 
-@media (max-width: 900px) {
-  .workspace:not(.form-mini) { grid-template-columns: 180px minmax(0, 1fr) 0px; }
-  .workspace:not(.form-mini) .col-right { display: none; }
+/* 1120px 以下：右栏不再占列，改为覆盖式抽屉，把宽度让给聊天主区 */
+@media (max-width: 1120px) {
+  .workspace:not(.form-mini) { grid-template-columns: 200px minmax(0, 1fr); }
+  .workspace:not(.form-mini) .col-right {
+    position: absolute; top: 0; right: 0; bottom: 0; z-index: 20;
+    width: min(328px, 100%); background: var(--bg);
+    box-shadow: -12px 0 32px var(--shadow);
+  }
+}
+@media (max-width: 820px) {
+  .workspace:not(.form-mini) { grid-template-columns: 172px minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
   .workspace:not(.form-mini) { grid-template-columns: minmax(0, 1fr); }
