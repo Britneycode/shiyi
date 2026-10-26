@@ -1,4 +1,4 @@
-# 打包安装包 —— 必须是 .NET ZipArchive，不能用 Compress-Archive
+﻿# 打包安装包 —— 必须是 .NET ZipArchive，不能用 Compress-Archive
 #
 # 原因：宿主解包用 yauzl 且开启 strictFileNames:true，条目名中的反斜杠会被判非法，
 # 报 INSTALL_ARCHIVE_INVALID「Archive could not be read safely.」。
@@ -16,7 +16,7 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $Root = (Resolve-Path $Root).Path
 
-# Zip name follows the manifest version, so the file name cannot drift from the version.
+# 包名跟随 manifest 版本，改版本后不用手改文件名。
 if (-not $Out) {
   $ver = (Get-Content -Raw -Encoding UTF8 (Join-Path $Root 'manifest.json') | ConvertFrom-Json).version
   $Out = Join-Path $Root ("shiyi-v{0}.zip" -f $ver)
