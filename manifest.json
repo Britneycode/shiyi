@@ -1,0 +1,45 @@
+{
+  "manifestVersion": 2,
+  "id": "shiyi",
+  "name": "拾遗",
+  "version": "0.1.0",
+  "entry": "index.js",
+  "icon": "assets/icon.svg",
+  "description": "Hana 里的助手在这里陪你聊天，记住你手上的事——工作、学习、生活——到时候主动来问一句进度；真要干活，一键交给 Hana 主对话。数据只存在本机。",
+  "capabilities": [
+    "app/agents.read",
+    "app/resources.read",
+    "app/models.read",
+    "app/models.infer",
+    "app/tools.expose-to-model",
+    "app/session.start-turn",
+    "app/sessions.manage",
+    "app/ui.clipboard-write"
+  ],
+  "contributes": {
+    "cards": [
+      {
+        "id": "chat",
+        "title": "拾遗",
+        "description": "和助手聊天，看看手上的事。",
+        "face": { "image": "assets/icon.svg" },
+        "pageIcon": "assets/nav-icon.svg",
+        "route": "/panel.html",
+        "realization": "page",
+        "siteNavEntry": true,
+        "detached": { "route": "/panel.html" },
+        "detachedDefaultSize": { "width": 1080, "height": 760 },
+        "cardForm": "flush",
+        "titlebar": "solid"
+      },
+      {
+        "id": "mini",
+        "title": "拾遗·小窗",
+        "description": "跟主对话并排用的小窗，同一份聊天记录。",
+        "face": { "image": "assets/icon.svg" },
+        "route": "/panel.html?form=mini",
+        "cardForm": "edge-to-edge"
+      }
+    ]
+  }
+}

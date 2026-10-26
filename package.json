@@ -1,0 +1,10 @@
+{
+  "name": "shiyi",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "拾遗 — HanaAgent v2 app：聊天 + 记事 + 主动跟进 + 交给 Hana",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}
