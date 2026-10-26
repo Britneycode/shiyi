@@ -1,5 +1,11 @@
 # CHANGELOG — 拾遗 (shiyi)
 
+## v0.1.3（2026-10-26）
+
+- 出包方式改为宿主自带的官方打包器 `extension-pack.mjs`，产物 `app-shiyi-0.1.3.zip` 与官方市场收录要求的条目格式一致；自定义源索引与未来市场收录因此共用同一份字节（同一个 sha256）。
+- 包内代码与 v0.1.2 相同，仅 `manifest.json` 的 `version` 变更为 `0.1.3`（另同步 `package.json`）。v0.1.2 的资产保留，与 v0.1.1 一样作废，请用本版本。
+- 宿主 `validate-app.mjs --archive` → **0 error**（1 warning：动态依赖无法静态证明，属已知）；`node --test tests/*.test.js` → **148/148 pass**。
+
 ## v0.1.2（2026-10-26）
 
 - 前端会话凭证：宿主把本应用的 surface 会话放在 iframe URL 的 `appSurfaceSession` 参数里（`X-Hana-App-Surface-Session` 头回传），原代码只认 `hana-surface-session`/`session`，面板拿不到凭证。已按宿主 APPS.md「鉴权两通道」修正。

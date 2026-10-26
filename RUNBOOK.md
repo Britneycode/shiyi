@@ -20,6 +20,15 @@ pwsh -NoProfile -File tools/pack.ps1
 
 产出仓库根的 `shiyi-v<manifest 版本>.zip`（manifest.json 在压缩包根级）。包名由脚本按 manifest 的 `version` 生成，改版本后不用手改文件名。
 
+**官方市场条目必须用宿主自带的打包器**（市场校验要求条目里的 `archive.url` 是 `{{BASE_URL}}/…` 占位，自产的条目通不过）：
+
+```bash
+node ~/.hanako/artifacts/server/<宿主版本>/scripts/extension-pack.mjs \
+  --kind app --dir <app 目录> --publisher "Britneycode" --out ./out
+```
+
+产出 `app-shiyi-<版本>.zip` 与 `app-shiyi-<版本>.entry.json`。`--dir` 指向的目录名必须等于 manifest 的 `id`（否则报 `id "shiyi" does not match its directory name`），所以先按「打包」那节的清单把 `index.js / manifest.json / package.json / lib / routes / ui` 复制进一个叫 `shiyi` 的目录再打包。
+
 **shell 选择**：脚本存为 UTF-8 with BOM，Windows PowerShell 5.1 与 PowerShell 7 都能跑（5.1 读无 BOM 的 UTF-8 脚本会按 ANSI 解码，中文注释会变乱码、here-string 里的中文会直接把脚本解析炸掉）。
 
 **不要用 `Compress-Archive`**：它写入的条目名用 `\` 分隔，宿主解包的 `yauzl` 开启了 `strictFileNames:true`，会判为非法路径并报 `INSTALL_ARCHIVE_INVALID`「Archive could not be read safely.」。`tools/pack.ps1` 用 .NET `ZipArchive` 显式写 `/`，并在打包后自检条目名与 manifest 位置。
@@ -49,12 +58,18 @@ pwsh -NoProfile -File tools/pack.ps1
 
 ### 生成索引
 
-```powershell
-pwsh -NoProfile -File tools/pack.ps1
-node tools/market-index.mjs
+```bash
+# 1) 用官方打包器出包（与市场收录同一份字节），产物名 app-shiyi-<版本>.zip
+node ~/.hanako/artifacts/server/<宿主版本>/scripts/extension-pack.mjs \
+  --kind app --dir <含 shiyi/ 的暂存目录>/shiyi --publisher "Britneycode" --out <输出目录>
+
+# 2) 按这个 zip 生成索引
+node tools/market-index.mjs --zip <输出目录>/app-shiyi-<版本>.zip
 ```
 
 产出 `market/app-shiyi-<版本>.entry.json`（单条条目）和 `market/index.v2.json`（整份索引），提交后即可按 URL 取到。
+
+`market/` 下**只留最新一版的 entry 文件**：宿主 builder 会把目录里所有 `*.entry.json` 合并成同一 id 的 `versions` 数组，旧条目留着会让索引多出一个指向旧 zip 的版本项（实测 0.1.2 条目残留时 `items` 交叉校验不相等）。
 
 ### 在宿主里添加源（一次性）
 
@@ -69,10 +84,10 @@ node tools/market-index.mjs
 
 ### 每次发版
 
-1. 改 `manifest.json` 的 `version`。
-2. `pwsh -NoProfile -File tools/pack.ps1` → `shiyi-v<版本>.zip`。
-3. 发 GitHub Release 并把 zip 挂成资产（资产名不能与已有资产重复；发布后不可替换同名资产，只能加新版本）。
-4. `node tools/market-index.mjs` —— `archive.url` 指向该 release 的下载地址，`sha256`/`size` 取自本地包，宿主安装时会逐字节核对。
+1. 改 `manifest.json` 的 `version`（`package.json` 一并改）。
+2. 官方打包器出包 → `app-shiyi-<版本>.zip` + `app-shiyi-<版本>.entry.json`（见「打包」）。
+3. 发 GitHub Release `v<版本>`，把上面**两个**资产都挂上（资产名不能与已有资产重复；发布后不可替换同名资产，只能加新版本）。
+4. `node tools/market-index.mjs --zip <输出目录>/app-shiyi-<版本>.zip` —— `archive.url` 指向该 release 的下载地址，`sha256`/`size` 取自本地包，宿主安装时会逐字节核对。删掉上一版的 `market/app-*.entry.json`。
 5. 提交并推送 `market/` 下的两份文件。
 6. 宿主市场页刷新 → 出现「可更新」→ 点更新 → 一次确认 → 覆盖安装完成。
 
@@ -88,9 +103,26 @@ node ~/.hanako/artifacts/server/<宿主版本>/scripts/extension-index-build.mjs
 
 ### 想进官方市场（可选，需维护者审核）
 
-向 [liliMozi/hana-marketplace](https://github.com/liliMozi/hana-marketplace) 提 PR，同时改两个文件：
+官方市场是**目录登记**：客户端只读 `liliMozi/hana-marketplace` 自动生成的 `index.v2.json`，而 `index.v2.json` 由该仓库的 `registry.json`（登记）+ `approvals.json`（批准的具体安装包）算出。收录 = 向上游提一个 PR，同时改这两个文件；维护者审核合并后，工作流重新生成索引，客户端才能发现。
 
-- `registry.json`：`{ "kind": "app", "id": "shiyi", "repository": "Britneycode/shiyi", "publisher": "Britneycode" }`
-- `approvals.json`：`{ "kind": "app", "id": "shiyi", "tag": "v<版本>", "sha256": "<条目 JSON 里 archive.sha256 的值>", "readme": "…" }`
+登记前必须先满足（逐条对应市场同步器的校验）：
 
-同步器只按批准记录里的 tag 读那个 Release，核对附件、大小与 SHA-256；目录更新不会自动安装，用户在市场里点一次更新才会覆盖安装。审核不通过也不影响上面的自定义源。
+1. 自己的仓库有一个**正式 Release**（非草稿、非预发布），同一 Release 里带两个资产：
+   - `app-shiyi-<版本>.entry.json`（app 类固定命名；Release 里必须**恰好一个**匹配 `app-shiyi-*.entry.json` 的资产）
+   - ZIP 资产，**文件名必须等于**条目里 `archive.url` 指向的名字（即 `app-shiyi-<版本>.zip`）
+2. 条目由官方打包器产出：`kind`/`id`/`publisher` 必须与登记一致，`version` 是语义化版本，`archive.sha256` 是 64 位小写 hex。
+3. `registry.json` 的条目字段只能是 `kind` / `id` / `repository` / `publisher`，`repository` 写 `owner/repository`（不是 URL）。
+4. `approvals.json` 的记录字段只能是 `kind` / `id` / `tag` / `sha256` / `readme`（`readme` 可选但建议给：非空 Markdown、≤2 MiB，随 PR 审核后写进索引，商店不再活取作者仓库的 URL）。
+
+写法：
+
+```json
+// registry.json → entries
+{ "kind": "app", "id": "shiyi", "repository": "Britneycode/shiyi", "publisher": "Britneycode" }
+// approvals.json → approvals
+{ "kind": "app", "id": "shiyi", "tag": "v<版本>", "sha256": "<条目 JSON 里 archive.sha256 的值>", "readme": "…" }
+```
+
+一次 PR 只登记一个扩展；不要手改 `index.v2.json`。发布是整批原子更新：任一新批准包校验失败，整批不发布。
+
+以后每次更新都是同一个流程：发新 Release（带新的 entry JSON 与 ZIP）→ 提 PR 改 `approvals.json` 里的 `tag` 与 `sha256` → 审核合并后上架。市场不会自动发现新版本，目录更新也不会自动替用户安装。审核不通过不影响上面的自定义源。
