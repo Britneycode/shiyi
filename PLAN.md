@@ -311,7 +311,7 @@ export default apply;
 
 **列助手**（✅ 茶话会）：`ctx.bus.request("agent:list", { scope: "all", lifecycle: "active" })` → `res.agents ?? res.items`，每行取 `id`、`name`、`yuan`、`isCurrent`、`state`。缓存 10 分钟；页面打开时 `GET /api/overview` 触发 30s 节流刷新。
 
-**profile**（✅ Phase 0）：`ctx.bus.request("agent:profile", { agentId })`（只收 `agentId`，`additionalProperties:false`；茶话会传的 `scope:"all"` 在用户环境里会被 schema 拒绝 → 不传）→ `{ profile: { id, name, yuan, identity, description, memoryPolicy:{enabled}, experiencePolicy, toolPolicy, models } }`。缓存 10 分钟（记忆开关走 `agent-policy` 的 60s 缓存）。
+**profile**（✅ Phase 0，宿主 1.2.1-beta 复核）：`ctx.bus.request("agent:profile", { agentId, scope: "all" })` → `{ profile: { id, name, yuan, identity, description, memoryPolicy:{enabled}, experiencePolicy, toolPolicy, models } }`。`scope` 缺省为 `"own"`，与 `agent:list` 的 `scope:"all"` 不一致时会拒绝其他分区助手；当前宿主已接受 `scope` 字段，不再沿用「只收 agentId」的旧判断。缓存 10 分钟（记忆开关走 `agent-policy` 的 60s 缓存）。
 
 **聊天模型**：取 `profile.models.chat`（✅ 茶话会同款来源；🧪 具体形状 `{ provider, model }` 还是 `{ provider, id }`，按茶话会解析函数兼容两种）。取不到或 `ctx.models.list()` 里没有 → 该助手标记「没有可用的聊天模型」，聊天输入框禁用并说明「请在 Hana 里给 ta 设置聊天模型」，**不换模型顶替**。
 

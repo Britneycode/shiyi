@@ -36,6 +36,13 @@ node ~/.hanako/artifacts/server/<宿主版本>/scripts/extension-pack.mjs \
 ## 发布到 GitHub Release
 
 - 令牌只从环境变量 `GITHUB_TOKEN_BRITNEYCODE` 读，不写进仓库、git config 或 remote URL。
+- **`git push` 必须显式带凭证**：remote 是纯 https，本机没有缓存凭证，直接 `git push` 会挂在交互式账号密码提示上直到超时（不报错、也不推进）。正确写法是走一次性 credential helper 从环境变量取，令牌不落盘、不进 config：
+
+  ```bash
+  GIT_TERMINAL_PROMPT=0 git -c credential.helper='!f() { echo username=x-access-token; echo password=$GITHUB_TOKEN_BRITNEYCODE; }; f' push origin main
+  ```
+
+  `GIT_TERMINAL_PROMPT=0` 保证万一凭证不对时立刻失败，而不是再次挂起。`gh api` / `curl` 同样用 `-H "Authorization: Bearer $GITHUB_TOKEN_BRITNEYCODE"`。
 - **提交含中文的正文，用 UTF-8 的 JSON 文件 + `curl --data-binary @file`**（`Content-Type: application/json; charset=utf-8`）。已实测：PowerShell 5.1 的 `Invoke-RestMethod` 传字符串 body 时不按 UTF-8 发出，中文会变成一串 `?`（release 说明就是这个坑）；改用 curl + UTF-8 JSON 文件后正常。
 - 同一 release 下的资产名不可重复；要出新版就升 manifest 版本、加法发新 release，不要替换已发布资产。
 

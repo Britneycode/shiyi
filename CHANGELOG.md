@@ -1,5 +1,10 @@
 # CHANGELOG — 拾遗 (shiyi)
 
+## v0.1.4（2026-10-26）
+
+- 修复宿主内助手信息读取：`agent:profile` 补 `scope: "all"`。此前只传 `agentId`，宿主默认按本 App 的 `own` 范围查找，其他助手会报「does not belong to app shiyi」，模型与记忆设置因此读不到。新增宿主契约回归测试，`node --test tests/*.test.js` → **149/149 pass**。
+- 真机若仍显示「还没有助手」，先确认安装版本：v0.1.0 的路由按 Express 写，宿主日志为 `res.json is not a function`，`/api/overview` 无有效响应；v0.1.1 起已修复，本版包含全部相关修正。
+
 ## v0.1.3（2026-10-26）
 
 - 出包方式改为宿主自带的官方打包器 `extension-pack.mjs`，产物 `app-shiyi-0.1.3.zip` 与官方市场收录要求的条目格式一致；自定义源索引与未来市场收录因此共用同一份字节（同一个 sha256）。

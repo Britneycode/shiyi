@@ -36,6 +36,26 @@ test("agent-policy: memoryPolicy.enabled=false → off；true → on；缺字段
   assert.equal(await p3.canLearn("hana"), false); // unknown 一律按不可学
 });
 
+test("agents: 跨分区读取 profile 显式传 scope=all，取到模型与记忆设置", async () => {
+  const ctx = fakeCtx({
+    bus: {
+      subscribe: () => {},
+      request: async (method, args) => {
+        // 宿主契约：scope 缺省为 own，读取其他应用的助手会被拒绝。
+        if (method === "agent:list") return { agents: [{ id: "hana", name: "小花", ownerPluginId: null }] };
+        if (method === "agent:profile" && args.scope === "all") {
+          return { profile: { models: { chat: { provider: "p", model: "m" } }, memoryPolicy: { enabled: false } } };
+        }
+        throw new Error(`agent:profile: agent "hana" does not belong to app "shiyi"`);
+      },
+    },
+  });
+  const agents = createAgents({ ctx, caps: createCaps(ctx) });
+  const [overview] = await agents.overview();
+  assert.equal(overview.chatModel, "p/m");
+  assert.equal(overview.memoryEnabled, false);
+});
+
 test("agent-policy: profile 请求失败 → unknown（不抛）", async () => {
   const ctx = fakeCtx({
     bus: {
