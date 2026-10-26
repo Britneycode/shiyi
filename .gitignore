@@ -4,4 +4,4 @@
 node_modules/
 *.log
 # 分发压缩包（由打包脚本生成，不进版本库）
-shiyi-v0.1.0.zip
+shiyi-v*.zip

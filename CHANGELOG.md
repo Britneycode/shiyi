@@ -1,6 +1,17 @@
 # CHANGELOG — 拾遗 (shiyi)
 
-## v1.0.0（2026-10-26）
+## v0.1.2（2026-10-26）
+
+- 前端会话凭证：宿主把本应用的 surface 会话放在 iframe URL 的 `appSurfaceSession` 参数里（`X-Hana-App-Surface-Session` 头回传），原代码只认 `hana-surface-session`/`session`，面板拿不到凭证。已按宿主 APPS.md「鉴权两通道」修正。
+- v0.1.1 的包不含此修正，请用本版本。
+
+## v0.1.1（2026-10-26）
+
+- 路由契约修复：`routes/ui.js` 原按 Express 形状写（`req`/`res` + `res.json`），宿主是 Hono（handler 只收一个 context，响应走 `c.json`），真机上全部端点 500（`res.json is not a function`）。改写后 35 个端点行为不变。
+- 新增 `tests/routes.test.js`（13 例）：按宿主同款 Hono 契约覆盖路由层，填补装配层测试盲区。`node --test tests/*.test.js` → **148/148 pass**。
+- 打包脚本产出的包名跟随 manifest 版本，不再手写文件名。
+
+## v0.1.0（2026-10-26）
 
 首版交付，按 PLAN.md v9 的 4 个里程碑全量落地。`node --test tests/*.test.js` → **135/135 pass**。
 

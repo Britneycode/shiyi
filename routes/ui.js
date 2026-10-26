@@ -1,7 +1,10 @@
 // REST API（§4.13）：唯一真相源 routes/ui.js，自动扫描加载。
 // export default function registerRoutes(app, ctx)；不同时调用 ctx.routes.register。
 // 返回统一 { ok:true, … } 或 { ok:false, code, message }。
-// 注意：app 是宿主的 surface app（带 .get/.post/.patch/.delete），不是 ctx。
+// 注意：app 是宿主创建的 Hono 子 app（带 .get/.post/.patch/.delete），不是 ctx。
+// 宿主契约（HanaAgent 1.2.1-beta APPS.md「应用自带后端路由」）：
+// handler 只收一个 Hono context c，响应走 c.json()；路径参数 c.req.param()、
+// 查询参数 c.req.query()、请求体 await c.req.json()。
 
 import { wire } from "../lib/wire.js";
 import { localISO, isSameLocalDay } from "../lib/util.js";
@@ -10,14 +13,22 @@ const DAY_MS = 24 * 3600_000;
 
 function bad(code, message) { return { ok: false, code, message }; }
 
-/** 统一包装：捕获异常，返回 ok:false。 */
+/** 读请求体：GET/HEAD 无体；解析失败（空体 / 非 JSON）当空对象，不让端点崩。 */
+async function readBody(c) {
+  const method = String(c?.req?.method ?? "GET").toUpperCase();
+  if (method === "GET" || method === "HEAD") return {};
+  try { return (await c.req.json()) ?? {}; } catch { return {}; }
+}
+
+/** 统一包装：把 Hono context 归一成 {params,query,body}，捕获异常，返回 ok:false。 */
 function h(fn) {
-  return async (req, res) => {
+  return async (c) => {
     try {
+      const req = { params: c.req.param(), query: c.req.query(), body: await readBody(c) };
       const out = await fn(req);
-      res.json({ ok: true, ...out });
+      return c.json({ ok: true, ...out });
     } catch (err) {
-      res.json(bad("error", String(err?.message ?? err).slice(0, 200)));
+      return c.json(bad("error", String(err?.message ?? err).slice(0, 200)));
     }
   };
 }

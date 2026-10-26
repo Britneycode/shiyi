@@ -56,7 +56,9 @@ const icon = (n) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IC[
 
 /* ───────────────── 3. API 层（PLAN §4.13） ───────────────── */
 const BASE = '/api/apps/shiyi/routes';
-const surfaceSession = qs.get('hana-surface-session') || qs.get('session') || '';
+// 宿主把本应用的 surface 会话放在 iframe URL 的 ?appSurfaceSession=（APPS.md「鉴权两通道」），
+// 页面脚本读出来、用 X-Hana-App-Surface-Session 头回传；其余名字是旧版兼容。
+const surfaceSession = qs.get('appSurfaceSession') || qs.get('hana-surface-session') || qs.get('session') || '';
 
 async function api(path, opts = {}) {
   const res = await fetch(BASE + path, {

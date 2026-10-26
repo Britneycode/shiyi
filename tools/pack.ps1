@@ -7,7 +7,7 @@
 
 param(
   [string]$Root = (Split-Path -Parent $PSScriptRoot),
-  [string]$Out  = (Join-Path (Split-Path -Parent $PSScriptRoot) 'shiyi-v0.1.0.zip')
+  [string]$Out  = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -15,6 +15,12 @@ Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $Root = (Resolve-Path $Root).Path
+
+# Zip name follows the manifest version, so the file name cannot drift from the version.
+if (-not $Out) {
+  $ver = (Get-Content -Raw -Encoding UTF8 (Join-Path $Root 'manifest.json') | ConvertFrom-Json).version
+  $Out = Join-Path $Root ("shiyi-v{0}.zip" -f $ver)
+}
 
 $files = New-Object System.Collections.Generic.List[string]
 foreach ($f in @('index.js', 'manifest.json', 'package.json')) {
