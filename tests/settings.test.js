@@ -72,3 +72,24 @@ test("settings: patch memory.scope 非法值被拒", async () => {
   assert.equal(r.ok, false);
   rmrf(dir);
 });
+
+test("settings: patch 点号键（proactive.enabled / memory.learnFromChat）展开生效", async () => {
+  const dir = tmpdir();
+  const s = createSettings(dir);
+  await s.load();
+  const r = await s.patch({ "proactive.enabled": true, "memory.learnFromChat": false });
+  assert.equal(r.ok, true);
+  assert.equal(s.get().proactive.enabled, true);
+  assert.equal(s.get().memory.learnFromChat, false);
+  rmrf(dir);
+});
+
+test("settings: patch 点号键嵌套（proactive.quiet.enabled）展开生效", async () => {
+  const dir = tmpdir();
+  const s = createSettings(dir);
+  await s.load();
+  const r = await s.patch({ "proactive.quiet.enabled": true });
+  assert.equal(r.ok, true);
+  assert.equal(s.get().proactive.quiet.enabled, true);
+  rmrf(dir);
+});
