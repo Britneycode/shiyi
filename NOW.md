@@ -8,6 +8,9 @@
 
 ## 已完成
 
+- P0 前端令牌桥接（CDS-BRIDGE）：`ui/panel.css` 新增表面阶梯 ×2 套、`--sy-alpha-*`/`--sy-border-*-alpha` ×2 套并桥接覆盖 `--border`、阴影五档 ×2 套、`--sy-hairline` 默认值与 2x/3x 媒体查询、动效令牌与弹簧曲线、`.sy-squish` 按压类、深色字重逆补偿、`svg.i` 光学对齐、`--font-ui` 改纯系统 CJK 链；`ui/panel.js` 仅 1475 行 IME 守卫一处。既有变量零删除；`#ffffff` 仅出现在 surface-3 浅色值与深色 mix 两处。语法花括号配对校验通过；已浏览器实测（含 IME 守卫合成事件验证）。
+- P1 布局容器（CDS-BRIDGE-P1）：三栏底色归位 `--sy-surface-1`；`.chat-stream`/`.panel-body`/`.agent-list`/`.d-body` 四滚动容器挂 15 段滚动渐隐 mask；`.chat-textarea` 升 composer 三态（20px 圆角 + 常态/hover/focus 三档阴影）；抽屉/模态/Toast 切 `var(--sy-shadow-popover/md)` + 16px/9999px 圆角。零业务逻辑改动；`ui/panel.css` 单文件；已浏览器实测（含滚动渐隐、composer 三态、深色 popover 白色内高光）。
+- P2 原子组件（CDS-BRIDGE-P2）：`.btn` 挂按压弹簧（:active scale(.975) 60ms 塌陷 + 450ms `linear()` 弹簧回弹）；`.seg` 分段控件轨道与按钮双 9999px pill，选中态升 `--sy-surface-3`+`--sy-shadow-sm`；新增 3 个 keyframes——`sy-dot-breathe`（`.dot` 2.4s 呼吸）、`sy-dot-pulse`（`.avatar-status` 脉冲光晕）、`sy-msg-fade-up`（`.msg-group`/`.handoff-card` 300ms 上浮渐入）；`.unread-pill`/`.count-num`/`.budget-cell b`/`.d-props dd`/`.up-window` 等补挂 `tabular-nums lining-nums`。零业务逻辑、零 JS 改动；`ui/panel.css` 单文件；已浏览器实测（按钮弹簧、pill、动画名、keyframes 存在性全验证，截图确认 pill 渲染）。
 - Step 1：P1 + 存储层（settings/threads/repo/exclusions）46/46
 - Step 2：P2+P3+P4（extract/reconcile/recall/tools-host）116/116
 - Step 3：P5+P6+P7（proactive engine/gate/banner/handoff）135/135
@@ -31,6 +34,9 @@
 
 ## Next Steps
 
+- [x] P0 视觉复验：已在 `.preview/audit-p0.html`（假数据注入）实测，浅色/深色、抽屉/模态/Toast、IME 守卫全过；指南在 `docs/CDS-P0-验收指南.md`。
+- [x] P1 布局容器复验：同环境实测滚动渐隐、composer 三态、popover 双环阴影、圆角矩阵。
+- [x] P2 原子组件复验：同环境实测按钮弹簧 transition（linear() 曲线已进 computed）、`.btn:active` 塌陷规则、pill 9999px、3 个 keyframes 挂载、数字 tabular-nums；浅色截图确认。
 - [ ] 用户在宿主市场页点「可更新」装 **v0.1.5**，确认三栏不再挤压、右栏可点开成抽屉；这是布局修复的端到端验收。
 - [ ] 官方市场收录 PR 已提交并同步到 v0.1.5：`liliMozi/hana-marketplace#153`；等待维护者审核，合并前官方市场不会显示拾遗。
 - [ ] 宿主 `--smoke` UI 检查（本机无 Electron，未跑）。

@@ -16,7 +16,9 @@
   --fs-title: 1rem; --fs-body: .9rem; --fs-ui: .82rem; --fs-caption: .78rem; --fs-hint: .7rem; --fs-micro: .62rem;
   --duration-instant: .1s; --duration-fast: .15s; --duration-slow: .25s;
   --ease-out: cubic-bezier(.16,1,.3,1); --ease-standard: cubic-bezier(.2,0,0,1);
-  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+  /* 6a. 纯系统 CJK 链（去掉假装引用的 Inter；衬线/等宽栈保留装饰字体） */
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
   --font-serif: 'EB Garamond', 'Noto Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', 'STSong', serif;
   --font-serif-text: 'PT Serif', 'Noto Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', 'STSong', serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -41,6 +43,30 @@
     --overlay-subtle: rgba(255,255,255,.03); --overlay-light: rgba(255,255,255,.05);
     --overlay-medium: rgba(255,255,255,.08); --overlay-strong: rgba(255,255,255,.15);
     --tool-bg: rgba(255,255,255,.03);
+
+    /* ── CDS 桥接：深色兜底（与 html[data-tone="dark"] 块保持同步） ── */
+    /* 表面阶梯 */
+    --sy-surface-0: var(--bg);        /* #3B4A54 */
+    --sy-surface-1: color-mix(in srgb, var(--bg) 55%, var(--bg-card));
+    --sy-surface-2: var(--bg-card);   /* #445560 */
+    --sy-surface-3: color-mix(in srgb, var(--bg-card) 82%, #fff);
+    --sy-surface-popover: var(--bg-card);
+    /* 中性 alpha 边 + --border 深色覆盖 */
+    --sy-alpha-1: rgba(255,255,255,.05);
+    --sy-alpha-2: rgba(255,255,255,.09);
+    --sy-alpha-3: rgba(255,255,255,.16);
+    --sy-border-alpha: var(--sy-alpha-2);
+    --sy-border-strong-alpha: var(--sy-alpha-3);
+    --border: var(--sy-border-alpha);
+    /* 阴影五档（内高光） */
+    --sy-shadow-sm: 0 1px 2px 0 rgba(0,0,0,.4), 0 2px 8px 0 rgba(0,0,0,.4);
+    --sy-shadow-md: 0 2px 4px 0 rgba(0,0,0,.4), 0 6px 16px 0 rgba(0,0,0,.4);
+    --sy-shadow-lg: 0 4px 8px 0 rgba(0,0,0,.5), 0 16px 36px -2px rgba(0,0,0,.4);
+    --sy-shadow-popover: inset 0 0 0 1px rgba(255,255,255,.10),
+                         0 8px 28px rgba(0,0,0,.65), 0 2px 8px rgba(0,0,0,.45);
+    --sy-shadow-composer:       0 4px 20px rgba(0,0,0,.4),  inset 0 0 0 1px var(--sy-border-alpha);
+    --sy-shadow-composer-hover: 0 4px 24px rgba(0,0,0,.55), inset 0 0 0 1px var(--sy-border-strong-alpha);
+    --sy-shadow-composer-focus: 0 4px 24px rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.22), 0 0 0 1px rgba(255,255,255,.22);
   }
 }
 
@@ -61,6 +87,50 @@ html {
   --sy-k-life: #5F8F67;
   --sy-k-knowledge: #537D96; --sy-k-howto: #5F8F67; --sy-k-experience: #B5734F;
   --sy-k-idea: #8C6B9E; --sy-k-person: #B9606A; --sy-k-other: #8E9196;
+
+  /* ── 1. CDS 表面阶梯（浅色：基于 --bg / --bg-card 的等距 ramp） ── */
+  --sy-surface-0: var(--bg);                                         /* 页面基底 / 三栏底层 */
+  --sy-surface-1: color-mix(in srgb, var(--bg) 55%, var(--bg-card)); /* 侧栏（左/右栏现在的 mix 态） */
+  --sy-surface-2: var(--bg-card);                                    /* 卡片 / 气泡 / 输入框 */
+  --sy-surface-3: #ffffff;                                           /* 浮起态 / hover 填充 */
+  --sy-surface-popover: var(--bg-card);                              /* 抽屉 / 模态 / toast */
+
+  /* ── 2. CDS 中性 alpha 边（浅 10% 黑族）+ --border 桥接覆盖兜底 ── */
+  --sy-alpha-1: rgba(59,61,63,.05);   /* ghost hover 填充 */
+  --sy-alpha-2: rgba(59,61,63,.10);   /* 标准边 */
+  --sy-alpha-3: rgba(59,61,63,.18);   /* 强边（hover/强调） */
+  --sy-border-alpha: var(--sy-alpha-2);
+  --sy-border-strong-alpha: var(--sy-alpha-3);
+  --border: var(--sy-border-alpha);   /* 桥接：既有引用零改动，视觉自动切到中性 alpha */
+
+  /* ── 3. CDS 阴影五档（双层弥散 + popover 双环 + composer 三态） ── */
+  --sy-shadow-sm: 0 1px 2px 0 rgba(59,61,63,.05), 0 2px 8px 0 rgba(59,61,63,.06);
+  --sy-shadow-md: 0 2px 4px 0 rgba(59,61,63,.05), 0 6px 16px 0 rgba(59,61,63,.08);
+  --sy-shadow-lg: 0 4px 8px 0 rgba(59,61,63,.06), 0 12px 28px -2px rgba(59,61,63,.10);
+  /* 双环 popover：0px 内环 + 1px 外环 + 两层弥散 */
+  --sy-shadow-popover: inset 0 0 0 0 var(--sy-border-alpha),
+                       0 0 0 1px var(--sy-border-alpha),
+                       0 8px 24px rgba(59,61,63,.12), 0 2px 6px rgba(59,61,63,.08);
+  /* composer 三态 */
+  --sy-shadow-composer:       0 4px 20px rgba(59,61,63,.035), inset 0 0 0 1px var(--sy-border-alpha);
+  --sy-shadow-composer-hover: 0 4px 24px rgba(59,61,63,.06),  inset 0 0 0 1px var(--sy-border-strong-alpha);
+  --sy-shadow-composer-focus: 0 4px 24px rgba(59,61,63,.08),  inset 0 0 0 1px var(--sy-border-strong-alpha), 0 0 0 1px var(--sy-border-strong-alpha);
+
+  /* ── 4. 发丝细线默认值（高分屏由下方媒体查询改写） ── */
+  --sy-hairline: 1px;
+
+  /* ── 5. CDS 动效令牌（旧 --duration-* 保留，新代码用 sy-*） ── */
+  --sy-dur-fast: 60ms;
+  --sy-dur-snap: .12s;
+  --sy-dur-base: .2s;
+  --sy-dur-sheet: .3s;
+  --sy-dur-slow: .45s;
+  --sy-ease-swift: cubic-bezier(.16, 1, .3, 1);
+  --sy-ease-enter: cubic-bezier(.22, 1, .36, 1);
+  --sy-ease-snap:  cubic-bezier(.32, .72, 0, 1);
+  --sy-ease-pop:   cubic-bezier(.34, 1.56, .64, 1);
+  /* 15 阶物理弹簧回弹（松手复位用） */
+  --sy-btn-spring: linear(0,.2459,.6526,.9468,1.0764,1.0915,1.0585,1.0219,.9993,.9914,.9921,.9957,.9988,1.0004,1);
 }
 html[data-tone="dark"] {
   --sy-text-2: color-mix(in srgb, var(--text-light) 72%, var(--text));
@@ -77,6 +147,51 @@ html[data-tone="dark"] {
   --sy-k-life: #8CC790;
   --sy-k-knowledge: #8FB4CC; --sy-k-howto: #8CC790; --sy-k-experience: #E0A27E;
   --sy-k-idea: #C3A3D6; --sy-k-person: #E59AA6; --sy-k-other: #A3B5C0;
+
+  /* ── 1. CDS 表面阶梯（深色：复用 midnight 基底，mix 补中间档） ── */
+  --sy-surface-0: var(--bg);        /* #3B4A54 */
+  --sy-surface-1: color-mix(in srgb, var(--bg) 55%, var(--bg-card));
+  --sy-surface-2: var(--bg-card);   /* #445560 */
+  --sy-surface-3: color-mix(in srgb, var(--bg-card) 82%, #fff);
+  --sy-surface-popover: var(--bg-card);
+
+  /* ── 2. CDS 中性 alpha 边（深 9% 白族）+ --border 深色覆盖 ── */
+  --sy-alpha-1: rgba(255,255,255,.05);
+  --sy-alpha-2: rgba(255,255,255,.09);
+  --sy-alpha-3: rgba(255,255,255,.16);
+  --sy-border-alpha: var(--sy-alpha-2);
+  --sy-border-strong-alpha: var(--sy-alpha-3);
+  --border: var(--sy-border-alpha);   /* 深色覆盖 */
+
+  /* ── 3. CDS 阴影五档（深色：内高光替代外轮廓，通透感关键） ── */
+  --sy-shadow-sm: 0 1px 2px 0 rgba(0,0,0,.4), 0 2px 8px 0 rgba(0,0,0,.4);
+  --sy-shadow-md: 0 2px 4px 0 rgba(0,0,0,.4), 0 6px 16px 0 rgba(0,0,0,.4);
+  --sy-shadow-lg: 0 4px 8px 0 rgba(0,0,0,.5), 0 16px 36px -2px rgba(0,0,0,.4);
+  --sy-shadow-popover: inset 0 0 0 1px rgba(255,255,255,.10),
+                       0 8px 28px rgba(0,0,0,.65), 0 2px 8px rgba(0,0,0,.45);
+  --sy-shadow-composer:       0 4px 20px rgba(0,0,0,.4),  inset 0 0 0 1px var(--sy-border-alpha);
+  --sy-shadow-composer-hover: 0 4px 24px rgba(0,0,0,.55), inset 0 0 0 1px var(--sy-border-strong-alpha);
+  --sy-shadow-composer-focus: 0 4px 24px rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.22), 0 0 0 1px rgba(255,255,255,.22);
+}
+
+/* ── 6b. 深色字重逆补偿（防深色光渗发胀）：600 → 565 ── */
+html[data-tone="dark"] .btn,
+html[data-tone="dark"] .wordmark,
+html[data-tone="dark"] .thing-title,
+html[data-tone="dark"] .chat-agent-title,
+html[data-tone="dark"] .d-title,
+html[data-tone="dark"] .tray-title,
+html[data-tone="dark"] .recent-title,
+html[data-tone="dark"] .up-item-title {
+  font-variation-settings: "wght" 565;  /* 600 → 565 逆补偿 */
+}
+
+/* ── 4. 高分屏视网膜发丝细线补偿（默认值 --sy-hairline: 1px 在 html{} 内） ── */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx), (resolution >= 2x) {
+  html { --sy-hairline: 0.5px; }
+}
+@media (-webkit-min-device-pixel-ratio: 3), (min-resolution: 3dppx), (resolution >= 3x) {
+  html { --sy-hairline: calc(1px / 3); }
 }
 
 /* ───────────────── 3. 基础与通用控件 ───────────────── */
@@ -92,15 +207,22 @@ button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .serif { font-family: var(--font-serif); }
 .num { font-variant-numeric: tabular-nums lining-nums; }
+.unread-pill, .count-num, .budget-cell b, .d-props dd, .up-window,
+.recent-title-line .num, .thing-foot .num { font-variant-numeric: tabular-nums lining-nums; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+/* 6c. 行内图标光学对齐 */
+svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.125em; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   height: 36px; padding: 0 14px; border-radius: var(--radius-card);
   border: 1px solid transparent; background: none; white-space: nowrap;
   font-size: var(--fs-ui); font-weight: 500; line-height: 1;
-  transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+  transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--sy-dur-slow) var(--sy-btn-spring);
+}
+.btn:active:not(:disabled) {
+  transform: scale(.975);
+  transition: transform var(--sy-dur-fast) ease-out;
 }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 .btn-primary { background: var(--sy-primary); color: var(--sy-on-primary); font-weight: 600; }
@@ -121,7 +243,7 @@ svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
 }
 .icon-btn:hover, .icon-btn[aria-pressed="true"] { background: var(--overlay-light); color: var(--text); }
 
-.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--k, var(--sy-k-other)); display: inline-block; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--k, var(--sy-k-other)); display: inline-block; animation: sy-dot-breathe 2.4s var(--sy-ease-swift) infinite; }
 .a-work { --k: var(--sy-k-work); }
 .a-study { --k: var(--sy-k-study); }
 .a-life { --k: var(--sy-k-life); }
@@ -144,16 +266,17 @@ svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
 
 .seg {
   position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-  gap: 2px; padding: 2px; border-radius: var(--radius-md); background: var(--overlay-light);
+  gap: 2px; padding: 2px; border-radius: 9999px; background: var(--overlay-light);
 }
 .seg button {
   position: relative; z-index: 1; height: 26px; padding: 0 10px;
-  border: 0; background: none; border-radius: var(--radius-sm);
+  border: 0; background: none; border-radius: 9999px;
   font-size: var(--fs-caption); color: var(--sy-text-2); white-space: nowrap;
+  transition: color var(--sy-dur-snap) var(--sy-ease-swift);
 }
 .seg button[aria-selected="true"] {
-  background: var(--bg-card); color: var(--text); font-weight: 600;
-  box-shadow: 0 1px 2px var(--shadow);
+  background: var(--sy-surface-3); color: var(--text); font-weight: 600;
+  box-shadow: var(--sy-shadow-sm);
 }
 
 .input {
@@ -188,6 +311,16 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 .proto-pill.active { background: var(--accent-light); border-color: var(--accent); color: var(--sy-ink); font-weight: 600; }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 
+/* ── 5. CDS 触觉按压：压下 60ms 塌陷，松手 450ms 弹簧回弹 ── */
+.sy-squish {
+  transform-origin: 50%;
+  transition: transform var(--sy-dur-slow) var(--sy-btn-spring);
+}
+.sy-squish:active, :active > .sy-squish {
+  transform: scale(.975);
+  transition: transform var(--sy-dur-fast) ease-out;
+}
+
 /* ───────────────── 5. 主工作区：三栏整页 vs 单列小窗 ───────────────── */
 .workspace-wrap {
   flex: 1; min-height: 0; display: flex; justify-content: center; align-items: stretch;
@@ -212,7 +345,7 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 /* ───────────────── 6. 左栏：助手列表（§4.14.1） ───────────────── */
 .col-left {
   display: flex; flex-direction: column; border-right: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 60%, var(--bg-card)); min-height: 0;
+  background: var(--sy-surface-1); min-height: 0;
 }
 .workspace.form-mini .col-left { display: none; }
 
@@ -224,7 +357,10 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   font-family: var(--font-serif); font-size: 19px; font-weight: 600;
   letter-spacing: .14em; color: var(--hana-text); margin: 0;
 }
-.agent-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.agent-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 2px;
+  /* P1 */ -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 24px), transparent 100%);
+  /* P1 */ mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 24px), transparent 100%);
+}
 .agent-item {
   all: unset; box-sizing: border-box; width: 100%;
   display: flex; align-items: center; gap: 10px; padding: 9px 10px;
@@ -244,6 +380,7 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px;
   border-radius: 50%; background: var(--sy-ok); border: 2px solid var(--bg-card);
 }
+.avatar-status:not(.off) { animation: sy-dot-pulse 2.4s var(--sy-ease-swift) infinite; }
 .avatar-status.off { background: var(--text-muted); }
 .agent-info { flex: 1; min-width: 0; }
 .agent-name-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
@@ -414,10 +551,12 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 .chat-stream {
   flex: 1; overflow-y: auto; padding: 18px 20px 24px;
   display: flex; flex-direction: column; gap: 12px;
+  /* P1 */ -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 24px), transparent 100%);
+  /* P1 */ mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 24px), transparent 100%);
 }
 .load-more-row { text-align: center; margin-bottom: 4px; }
 
-.msg-group { display: flex; flex-direction: column; gap: 4px; max-width: 82%; }
+.msg-group { display: flex; flex-direction: column; gap: 4px; max-width: 82%; animation: sy-msg-fade-up var(--sy-dur-sheet) var(--sy-ease-enter); }
 .msg-group.user { align-self: flex-end; align-items: flex-end; }
 .msg-group.assistant { align-self: flex-start; align-items: flex-start; }
 
@@ -474,6 +613,7 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   background: var(--bg-card); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
   border-radius: var(--radius-lg); padding: 14px 16px;
   box-shadow: 0 2px 10px var(--shadow);
+  animation: sy-msg-fade-up var(--sy-dur-sheet) var(--sy-ease-enter);
 }
 .handoff-head {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -503,11 +643,20 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 .input-row .btn { flex: none; }
 .chat-textarea {
   flex: 1 1 0; min-width: 0; min-height: 38px; max-height: 110px; padding: 8px 12px;
-  border-radius: var(--radius-card); border: 1px solid var(--border);
-  background: var(--bg-card); color: var(--text); font-size: var(--fs-body);
+  border-radius: 20px;
+  border: 0;
+  background: var(--sy-surface-2);
+  color: var(--text); font-size: var(--fs-body);
   line-height: 1.45; resize: none; outline: none;
+  box-shadow: var(--sy-shadow-composer);
+  transition: box-shadow var(--sy-dur-snap) var(--sy-ease-swift);
 }
-.chat-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.chat-textarea:hover {
+  box-shadow: var(--sy-shadow-composer-hover);
+}
+.chat-textarea:focus {
+  box-shadow: var(--sy-shadow-composer-focus);
+}
 .chat-textarea:disabled { opacity: .6; cursor: not-allowed; }
 .quick-prompts {
   display: flex; align-items: center; gap: 6px; overflow-x: auto;
@@ -523,7 +672,7 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 /* ───────────────── 9. 右栏：「事」与「知」面板（§4.14.1） ───────────────── */
 .col-right {
   display: flex; flex-direction: column; border-left: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 45%, var(--bg-card));
+  background: var(--sy-surface-1);
   min-width: 0; min-height: 0; overflow: hidden;
 }
 .workspace.right-collapsed .col-right,
@@ -549,7 +698,10 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   color: var(--sy-ink); font-weight: 600;
 }
 
-.panel-body { flex: 1; overflow-y: auto; padding: 10px 14px 24px; display: flex; flex-direction: column; gap: 14px; }
+.panel-body { flex: 1; overflow-y: auto; padding: 10px 14px 24px; display: flex; flex-direction: column; gap: 14px;
+  /* P1 */ -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 24px), transparent 100%);
+  /* P1 */ mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 24px), transparent 100%);
+}
 
 .group-sec { display: flex; flex-direction: column; gap: 6px; }
 .group-head {
@@ -581,17 +733,35 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 .drawer {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 31;
   width: min(480px, 100%); display: flex; flex-direction: column;
-  background: var(--bg); border-left: 1px solid var(--border);
-  box-shadow: -12px 0 36px var(--shadow); animation: slideIn var(--duration-slow) var(--ease-out);
+  background: var(--sy-surface-popover);
+  border-left: 1px solid var(--border);
+  border-radius: 16px 0 0 16px;
+  box-shadow: var(--sy-shadow-popover);
+  animation: slideIn var(--sy-dur-sheet) var(--sy-ease-enter);
 }
 @keyframes fade { from { opacity: 0; } }
 @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } }
+@keyframes sy-dot-breathe {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .65; transform: scale(.92); }
+}
+@keyframes sy-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, .35); }
+  50%      { box-shadow: 0 0 0 3px transparent; }
+}
+@keyframes sy-msg-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
 
 .d-head {
   flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px;
   height: 54px; padding: 0 16px; border-bottom: 1px solid var(--border);
 }
-.d-body { flex: 1; overflow-y: auto; padding: 16px 22px 32px; display: flex; flex-direction: column; gap: 16px; }
+.d-body { flex: 1; overflow-y: auto; padding: 16px 22px 32px; display: flex; flex-direction: column; gap: 16px;
+  /* P1 */ -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 24px), transparent 100%);
+  /* P1 */ mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 24px), transparent 100%);
+}
 .d-foot {
   flex: none; display: flex; justify-content: space-between; align-items: center; gap: 8px;
   padding: 12px 22px; border-top: 1px solid var(--border); background: var(--bg);
@@ -622,9 +792,12 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 .modal {
   position: fixed; z-index: 41; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: min(620px, calc(100% - 28px)); max-height: calc(100vh - 48px);
-  display: flex; flex-direction: column; border-radius: var(--radius-lg);
-  background: var(--bg); border: 1px solid var(--border);
-  box-shadow: 0 16px 48px var(--shadow); overflow: hidden;
+  display: flex; flex-direction: column;
+  border-radius: 16px;
+  background: var(--sy-surface-popover);
+  border: 0;
+  box-shadow: var(--sy-shadow-popover);
+  overflow: hidden;
 }
 .modal-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -660,9 +833,11 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 
 .toast {
   position: fixed; left: 50%; bottom: 20px; z-index: 60; transform: translateX(-50%);
-  padding: 9px 16px; border-radius: var(--radius-card);
+  padding: 9px 16px;
+  border-radius: 9999px;
   background: var(--text); color: var(--bg); font-size: var(--fs-ui);
-  box-shadow: 0 6px 20px var(--shadow); display: flex; align-items: center; gap: 10px;
+  box-shadow: var(--sy-shadow-md);
+  display: flex; align-items: center; gap: 10px;
 }
 .toast button {
   border: 0; background: none; color: var(--accent-light); font-weight: 600;
@@ -684,4 +859,14 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 @media (max-width: 640px) {
   .workspace:not(.form-mini) { grid-template-columns: minmax(0, 1fr); }
   .workspace:not(.form-mini) .col-left { display: none; }
+}
+
+/* CDS 滚动渐隐：15 段非线性 mask，顶部 0→1 快、底部 1→0 缓 */
+.sy-scroll-fade {
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 24px), transparent 100%),
+    linear-gradient(to bottom, black, black);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 24px), transparent 100%);
 }

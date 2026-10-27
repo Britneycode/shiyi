@@ -1472,7 +1472,9 @@ appEl.addEventListener('input', (e) => {
 });
 
 appEl.addEventListener('keydown', (e) => {
-  if (e.target.id === 'chat-input' && e.key === 'Enter' && !e.shiftKey) {
+  // IME 守卫：中文/日文输入法候选窗按 Enter 是「选词上屏」，不是发送（CDS 强制）
+  if (e.target.id === 'chat-input' && e.key === 'Enter' && !e.shiftKey
+      && !(e.nativeEvent?.isComposing || e.isComposing || e.keyCode === 229)) {
     e.preventDefault();
     sendUserMessage();
   } else if (e.key === 'Escape') {
