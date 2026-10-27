@@ -44,11 +44,17 @@
 - **无 confidence、无衰减**（Q17-A 砍掉的）
 - 149/149 全绿；已浏览器实测（chat-head 心情行渲染、life null 容错、stats 不被挤掉）
 
-### 批 4 · 流式打字机（独立攻坚）
-- 现状：POST messages 只回 {ok,turnId}，后台 schedule 生成，面板 loadThread 重拉
-- 目标：面板边收边渲染（NDJSON/SSE 或轮询 turnId 增量）
-- 涉及后端推流改造 + panel.js 渲染循环重写，**独立阶段，不裹进批 3**
-- **改**：lib/chat.js 流式透出、routes/ui.js 推流端点、panel.js 渲染
+### 批 4 · 流式打字机 ✅ 已落地（2026-10-27）
+
+**选型**：Plan B（轮询增量）。SSE（Plan A）需宿主 Hono 支持 `c.stream()`/`streamSSE`，未真机验证且 `h()` 包装强制 `c.json()` 是障碍——留作真机 PoC，渲染链路打通后切 SSE 只换数据源。
+
+- **lib/model.js**：`readStream` 加 `onDelta` 增量回调——NDJSON 逐行解析时 text-delta 边读边抛（`parsedSoFar` 跟踪行界）；非流路径整段解析后回放一次 onDelta；`streamOnce`/`chat` 签名加 `onDelta` 透传
+- **lib/chat.js**：`runTurn({ onDelta })` 透传给 model；`processTurn` 传 `onDelta: d => threads.appendDelta(agentId, turn.id, d)`
+- **lib/threads.js**：新增 `appendDelta`（累加 `turn.partial`，不落盘瞬态）、`currentTurn`（取 status=generating 的轮次）
+- **routes/ui.js**：GET `/api/threads/:agentId` 响应附 `generating: { turnId, partial, startedAt }`
+- **ui/panel.js**：`S.streaming` 状态 + 700ms 轮询 + `updateStreamingBubble` 局部 DOM 更新（`[data-stream-turn]` 定位气泡改 textContent，不整页 render 避免重置输入框）；流结束 → stopStreaming → loadThread → render
+- **ui/panel.css**：`.bubble-stream` 最小宽、`.stream-caret` 光标（2px×1em、--sy-accent、`sy-caret-blink` 0.9s steps 动画）
+- 154/154 全绿（新增 tests/stream.test.js：appendDelta 累加、多 agent 隔离、未知 turn 静默）；浏览器实测端到端通过（启动→增量→光标闪烁→落正式消息）
 
 ---
 

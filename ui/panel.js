@@ -121,6 +121,7 @@ const S = {
   toast: null,
   undoAction: null,
   sending: false,             // 发送中防重入
+  streaming: null,            // null | { agentId, turnId, partial, lastDeltaAt } 批 4 打字机
 
   settings: null,             // { onboarded, proactive{enabled,preset,dailyCap,minGapMinutes,quiet{...},noChaseUnanswered,...}, memory{learnFromChat,learnFromMain}, ... }
   agents: [],                 // [{id,name,yuan,chatModel,memoryEnabled,proactiveEnabled,unread}]
@@ -549,7 +550,12 @@ function renderCenterCol() {
         <button class="btn btn-ghost btn-xs" data-act="load-archive">加载更早的归档记录</button>
       </div>` : ''}
       ${th.messages.map(m => renderChatMessage(m, agent)).join('')}
-      ${S.sending ? `<div class="msg-group user"><div class="bubble">…</div></div>` : ''}
+      ${S.streaming && S.streaming.agentId === agent.id
+        ? `<div class="msg-group assistant streaming" data-stream-turn="${esc(S.streaming.turnId)}">
+             <div class="msg-meta"><span>${esc(agent?.name ?? '')}</span><span>·</span><span>正在输入…</span></div>
+             <div class="bubble bubble-stream">${esc(S.streaming.partial || '…')}<span class="stream-caret"></span></div>
+           </div>`
+        : (S.sending ? `<div class="msg-group user"><div class="bubble">…</div></div>` : '')}
     </div>
 
     <div class="chat-input-bar">
@@ -1539,16 +1545,98 @@ async function sendUserMessage() {
     const r = await api(`/api/threads/${encodeURIComponent(agent.id)}/messages`, {
       method: 'POST', body: { text, clientId },
     });
+    if (r.ok && r.turnId) {
+      // 批 4：启动打字机轮询，等流结束再 loadThread 全量刷新
+      startStreaming(agent.id, r.turnId);
+      return; // finally 里不再立即 render/loadThread
+    }
     if (r.ok) {
       await loadThread(agent.id);
-      // 提取可能更新了事/知
       await Promise.all([refreshThings(), refreshNotes()]);
     }
   } finally {
-    S.sending = false;
-    render();
-    scrollChatBottom();
+    if (!S.streaming) { // 流模式已接管时不动
+      S.sending = false;
+      render();
+      scrollChatBottom();
+    }
   }
+}
+
+// ── 流式打字机（批 4）：轮询 /api/threads/:id 的 generating.partial ────────────
+const STREAM_POLL_MS = 700;
+let streamTimer = null;
+
+function startStreaming(agentId, turnId) {
+  stopStreaming(); // 防重复
+  S.streaming = { agentId, turnId, partial: '', lastDeltaAt: Date.now() };
+  S.sending = false; // 发送态转流态
+  render();
+  scrollChatBottom();
+
+  const tick = async () => {
+    if (!S.streaming || S.streaming.turnId !== turnId) return; // 已被切换/停止
+    const th = S.threads[agentId];
+    const lastSeq = th?.messages?.at(-1)?.seq ?? 0;
+    try {
+      const r = await api(`/api/threads/${encodeURIComponent(agentId)}?after=${lastSeq}&limit=50`);
+      if (!S.streaming || S.streaming.turnId !== turnId) return;
+      if (r.ok) {
+        // 1) 收已落定的新消息（assistant 分条/系统行）
+        if (Array.isArray(r.messages) && r.messages.length) {
+          const existing = new Set((th?.messages ?? []).map((m) => m.seq));
+          for (const m of r.messages) {
+            if (!existing.has(m.seq)) th.messages.push(m);
+          }
+        }
+        // 2) 更新打字机
+        if (r.generating && r.generating.turnId === turnId) {
+          if (r.generating.partial !== S.streaming.partial) {
+            S.streaming.partial = r.generating.partial;
+            S.streaming.lastDeltaAt = Date.now();
+            updateStreamingBubble(); // 局部 DOM 更新，不整页 render
+          }
+        } else {
+          // generating 消失 → 流结束
+          stopStreaming();
+          await loadThread(agentId);
+          await Promise.all([refreshThings(), refreshNotes()]);
+          render();
+          scrollChatBottom();
+          return;
+        }
+      }
+    } catch {}
+    streamTimer = setTimeout(tick, STREAM_POLL_MS);
+  };
+  streamTimer = setTimeout(tick, STREAM_POLL_MS);
+}
+
+function stopStreaming() {
+  if (streamTimer) { clearTimeout(streamTimer); streamTimer = null; }
+  S.streaming = null;
+}
+
+/** 局部 DOM 更新：只改流式气泡的文本，不整页 render（避免打字机重置输入框） */
+function updateStreamingBubble() {
+  if (!S.streaming) return;
+  const el = document.querySelector(`[data-stream-turn="${S.streaming.turnId}"] .bubble-stream`);
+  if (!el) {
+    render(); // 气泡还没渲染出来（比如刚切回来）→ 整页 render 兜底
+    scrollChatBottom();
+    return;
+  }
+  const partial = S.streaming.partial || '…';
+  // 保留 caret span
+  const caret = el.querySelector('.stream-caret');
+  el.textContent = partial;
+  if (caret) el.appendChild(caret);
+  else {
+    const c = document.createElement('span');
+    c.className = 'stream-caret';
+    el.appendChild(c);
+  }
+  scrollChatBottom();
 }
 
 function scrollChatBottom() {

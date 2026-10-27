@@ -140,6 +140,9 @@ export default function registerRoutes(app, ctx) {
       const earlier = await threads.loadEarlier(req.params.agentId, { beforeSeq: +before, limit: 50 });
       list = { ...list, earlier };
     }
+    // 批 4 流式：附当前生成中的轮次（面板轮询渲染打字机）
+    const cur = threads.currentTurn?.(req.params.agentId);
+    if (cur) list = { ...list, generating: { turnId: cur.id, partial: cur.partial ?? "", startedAt: cur.startedAt } };
     return list;
   }));
   app.post("/api/threads/:agentId/messages", h(async (req) => {

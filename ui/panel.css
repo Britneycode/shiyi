@@ -881,3 +881,22 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   mask-image:
     linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 24px), transparent 100%);
 }
+
+/* ── 批 4 流式打字机（COMPANION-PLAN 批 4）────────────────────────────── */
+.msg-group.streaming .bubble-stream {
+  /* 打字机气泡：保持可读性，不打断布局 */
+  min-width: 24px;
+}
+.stream-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--sy-accent);
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  animation: sy-caret-blink 0.9s steps(2, start) infinite;
+}
+@keyframes sy-caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
