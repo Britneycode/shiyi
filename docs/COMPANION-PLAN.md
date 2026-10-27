@@ -37,11 +37,12 @@
 - 前端：agent-item 外层 button→div[role=option]，name-row 右侧 hover 显示 `.agent-hide-btn`（icon x）；hide 后 toast 带撤销（undoFn 调 unhide）；hide 当前 active 则切首个可见；设置模态加"已收起的助手（N）"组，每行恢复按钮
 - 不动宿主 profile、不动记忆数据；已浏览器实测（收起/过滤/撤销/管理区/恢复全链路）
 
-### 批 3 · 幕间生活 + 信念标记（核心）
-- **幕间生活**：每助手 `state:{mood, dwelling}` 存 settings/独立 state 文件；proactive tick 低频演化（不是每 tick 都变，加冷却）；chat.js 9 块 prompt 加第 10 块「此刻你的状态」；主动发言开场允许带"我刚才在……"
-- **信念标记**：memory 条目加 `kind: "stated" | "inferred"`；extract 时模型标注；prompt 里 inferred 条目带"（猜测）"后缀；reconcile 处理冲突时 stated 优先于 inferred
+### 批 3 · 幕间生活 + 信念标记 ✅ 已落地（2026-10-27）
+- **幕间生活**：新建 `lib/agent-state.js`——每助手 `<dataDir>/agent-state/<agentId>.json`（抄 threads per-agent 模式），字段 `{mood, dwelling, lastEvolvedAt}`；MOODS/DWELLINGS 轮换池，规则演化（不用模型），冷却 6h（`STATE_EVOLVE_COOLDOWN_MS`）；演化挂载 `engine.tick()` 的 `loadState` 后、`proactive.enabled` 检查**之前**（关主动也演化）；`prompts.js` 加第 4.5 块 `stateBlock`（nowBlock 后，`BUDGET_STATE=120`）；`chat.js buildSystem` 传 `agentState?.read(agentId)`；主动消息 `buildPrompt` 加【你此刻的状态】开场允许带"我刚才在……"
+- **信念标记**：字段叫 `belief`（**不叫 kind**，note 的 kind 已占为分类）；`markdown.js` THING/NOTE_FM_ORDER 加 `belief`、normalizeThing/normalizeNote 兜底 `stated`、serialize 入参；`repo.js` thingRow/noteRow 索引行加 belief、createThing/createNote 透传、updateThing/updateNote 加 `belief==="stated"` 才升级（反向不动）；`prompts.js` EXTRACT_SYSTEM 加"三、来源标注"段+JSON 示例加 `"belief"`、"一律不记"的"助手不确定或在猜"放宽为"拿不准标 inferred，瞎猜不记"；`extract.js` new_thing/new_note/update_thing 三分支白名单读 belief（默认 stated）、new_note L3 去重时 `belief==="stated" && row.belief==="inferred"` 调 `repo.updateNote` 升级；`prompts.js` thingsBlock/notesBlock inferred 行加"（猜测）"后缀
+- **前端透出**：`/api/overview` stats 循环同处加 `a.life = agentState?.read(a.id)`；`panel.js` loadAll map 加 `life`、chat-head stats 旁 `心情 ${mood}`（life null 时不渲染）
 - **无 confidence、无衰减**（Q17-A 砍掉的）
-- **改**：lib/chat.js prompt 组装、lib/proactive/engine.js 状态演化、lib/memory/extract.js 标注、lib/memory/repo.js schema、routes/ui.js 透出
+- 149/149 全绿；已浏览器实测（chat-head 心情行渲染、life null 容错、stats 不被挤掉）
 
 ### 批 4 · 流式打字机（独立攻坚）
 - 现状：POST messages 只回 {ok,turnId}，后台 schedule 生成，面板 loadThread 重拉

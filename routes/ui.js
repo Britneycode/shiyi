@@ -67,6 +67,7 @@ export default function registerRoutes(app, ctx) {
   const repo = d?.repo, threads = d?.threads, settings = d?.settings, agents = d?.agents;
   const chat = d?.chat, engine = d?.engine, handoff = d?.handoff, banner = d?.banner;
   const mainfeed = d?.mainfeed, extractor = d?.extractor, caps = d?.caps, persona = d?.persona;
+  const agentState = d?.agentState;
 
   if (!app || typeof app.get !== "function") return; // 无宿主路由时静默（单测里手调 handler）
 
@@ -86,6 +87,7 @@ export default function registerRoutes(app, ctx) {
         const knownDays = st.firstAt ? Math.max(0, Math.floor((Date.now() - Date.parse(st.firstAt)) / DAY_MS)) : 0;
         const memoryCount = recentThings.filter((r) => (r.agents || []).includes(a.id) || r.owner === a.id).length;
         a.stats = { knownDays, msgCount: st.msgCount, memoryCount };
+        a.life = agentState?.read(a.id) ?? null; // 幕间状态：{ mood, dwelling }
       }
     }
     const nowMs = Date.now();

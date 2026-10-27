@@ -235,7 +235,7 @@ async function loadAll() {
     S.agents = (ov.agents || []).map(a => ({
       id: a.id, name: a.name, yuan: a.yuan ?? '', chatModel: a.chatModel ?? null,
       memoryEnabled: a.memoryEnabled !== false, proactiveEnabled: a.proactiveEnabled !== false,
-      unread: a.unread ?? 0, stats: a.stats ?? null,
+      unread: a.unread ?? 0, stats: a.stats ?? null, life: a.life ?? null,
     }));
     S.hiddenAgents = ov.hiddenAgents || [];
     S.settings = ov.settings || null;
@@ -529,6 +529,7 @@ function renderCenterCol() {
           ${agent.chatModel ? `<span class="badge">${esc(agent.chatModel)}</span>` : `<span class="badge badge-danger">无可用模型</span>`}
           ${!agent.memoryEnabled ? `<span class="badge badge-warn">Hana 记忆已关闭 · 不再记新事</span>` : ''}
           ${agent.stats ? `<span class="chat-stats">认识 ${agent.stats.knownDays} 天 · 聊 ${agent.stats.msgCount} 条 · 记 ${agent.stats.memoryCount} 条</span>` : ''}
+          ${agent.life?.mood ? `<span class="chat-stats">心情 ${esc(agent.life.mood)}</span>` : ''}
         </div>
       </div>
       <div class="chat-head-right">
