@@ -8,6 +8,9 @@
 
 ## 已完成
 
+- 养成改造批 1 · 关系统计行（COMPANION-PLAN 批 1）：chat-head 显示「认识 N 天 · 聊 M 条 · 记 K 条」。新增 `threads._stats`（首条 at + 现存/归档消息总数）；`/api/overview` 给每助手注入 `stats`（memoryCount 只数 thing 的 owner/agents，note 无归属不计）；panel.js loadAll+renderCenterCol、panel.css `.chat-stats`（fs-hint+tabular-nums）。纯展示零行为改动；已浏览器实测。规划见 docs/COMPANION-PLAN.md。
+- 养成改造批 2 · 助手软删（COMPANION-PLAN 批 2）：`settings.hiddenAgentIds` 收起助手，左栏过滤、可恢复，不动宿主 profile/记忆。config 默认值 + settings normalize/applyPatch 白名单；`/api/overview` 拆 `agents`+`hiddenAgents`；`POST /api/agents/:id/hide|unhide`；agent-item 改 div+hover 显示 `.agent-hide-btn`、hide 带 toast 撤销、active 被收切首个可见；设置模态加"已收起的助手"管理组。已浏览器实测全链路。
+
 - P0 前端令牌桥接（CDS-BRIDGE）：`ui/panel.css` 新增表面阶梯 ×2 套、`--sy-alpha-*`/`--sy-border-*-alpha` ×2 套并桥接覆盖 `--border`、阴影五档 ×2 套、`--sy-hairline` 默认值与 2x/3x 媒体查询、动效令牌与弹簧曲线、`.sy-squish` 按压类、深色字重逆补偿、`svg.i` 光学对齐、`--font-ui` 改纯系统 CJK 链；`ui/panel.js` 仅 1475 行 IME 守卫一处。既有变量零删除；`#ffffff` 仅出现在 surface-3 浅色值与深色 mix 两处。语法花括号配对校验通过；已浏览器实测（含 IME 守卫合成事件验证）。
 - P1 布局容器（CDS-BRIDGE-P1）：三栏底色归位 `--sy-surface-1`；`.chat-stream`/`.panel-body`/`.agent-list`/`.d-body` 四滚动容器挂 15 段滚动渐隐 mask；`.chat-textarea` 升 composer 三态（20px 圆角 + 常态/hover/focus 三档阴影）；抽屉/模态/Toast 切 `var(--sy-shadow-popover/md)` + 16px/9999px 圆角。零业务逻辑改动；`ui/panel.css` 单文件；已浏览器实测（含滚动渐隐、composer 三态、深色 popover 白色内高光）。
 - P2 原子组件（CDS-BRIDGE-P2）：`.btn` 挂按压弹簧（:active scale(.975) 60ms 塌陷 + 450ms `linear()` 弹簧回弹）；`.seg` 分段控件轨道与按钮双 9999px pill，选中态升 `--sy-surface-3`+`--sy-shadow-sm`；新增 3 个 keyframes——`sy-dot-breathe`（`.dot` 2.4s 呼吸）、`sy-dot-pulse`（`.avatar-status` 脉冲光晕）、`sy-msg-fade-up`（`.msg-group`/`.handoff-card` 300ms 上浮渐入）；`.unread-pill`/`.count-num`/`.budget-cell b`/`.d-props dd`/`.up-window` 等补挂 `tabular-nums lining-nums`。零业务逻辑、零 JS 改动；`ui/panel.css` 单文件；已浏览器实测（按钮弹簧、pill、动画名、keyframes 存在性全验证，截图确认 pill 渲染）。

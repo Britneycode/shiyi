@@ -235,8 +235,9 @@ async function loadAll() {
     S.agents = (ov.agents || []).map(a => ({
       id: a.id, name: a.name, yuan: a.yuan ?? '', chatModel: a.chatModel ?? null,
       memoryEnabled: a.memoryEnabled !== false, proactiveEnabled: a.proactiveEnabled !== false,
-      unread: a.unread ?? 0,
+      unread: a.unread ?? 0, stats: a.stats ?? null,
     }));
+    S.hiddenAgents = ov.hiddenAgents || [];
     S.settings = ov.settings || null;
     S.budget = ov.budget || null;
     if (S.globalSnoozeUntil == null) {
@@ -295,8 +296,8 @@ function renderLeftCol() {
           : !a.memoryEnabled
             ? 'Hana 记忆已关 · 仅聊天'
             : (a.proactiveEnabled ? '主动跟进开' : '仅被动记事');
-        return `<button class="agent-item ${active ? 'active' : ''} ${!a.chatModel ? 'disabled-model' : ''}"
-          role="option" aria-selected="${active}" data-act="pick-agent" data-id="${esc(a.id)}">
+        return `<div class="agent-item ${active ? 'active' : ''} ${!a.chatModel ? 'disabled-model' : ''}"
+          role="option" tabindex="0" aria-selected="${active}" data-act="pick-agent" data-id="${esc(a.id)}">
           <span class="avatar">
             ${esc(agentAvatar(a))}
             <i class="avatar-status ${a.chatModel && a.proactiveEnabled ? '' : 'off'}"></i>
@@ -308,7 +309,8 @@ function renderLeftCol() {
             </span>
             <span class="agent-sub">${esc(sub)}</span>
           </span>
-        </button>`;
+          <button class="agent-hide-btn" data-act="hide-agent" data-id="${esc(a.id)}" title="收起 ${esc(a.name)}" aria-label="收起 ${esc(a.name)}">${icon('x')}</button>
+        </div>`;
       }).join('') || '<div style="padding:16px;color:var(--sy-text-2);font-size:var(--fs-caption);">还没有助手。</div>'}
     </div>
     <div class="left-foot">
@@ -526,6 +528,7 @@ function renderCenterCol() {
         <div class="chat-agent-meta">
           ${agent.chatModel ? `<span class="badge">${esc(agent.chatModel)}</span>` : `<span class="badge badge-danger">无可用模型</span>`}
           ${!agent.memoryEnabled ? `<span class="badge badge-warn">Hana 记忆已关闭 · 不再记新事</span>` : ''}
+          ${agent.stats ? `<span class="chat-stats">认识 ${agent.stats.knownDays} 天 · 聊 ${agent.stats.msgCount} 条 · 记 ${agent.stats.memoryCount} 条</span>` : ''}
         </div>
       </div>
       <div class="chat-head-right">
@@ -991,6 +994,21 @@ function renderModal() {
           </div>
         </div>
       </div>
+
+      ${(S.hiddenAgents && S.hiddenAgents.length) ? `
+      <div>
+        <div class="s-group-title">已收起的助手（${S.hiddenAgents.length}）</div>
+        <div class="s-group">
+          ${S.hiddenAgents.map(a => `
+          <div class="s-row">
+            <div>
+              <div>${esc(a.name)}</div>
+              <div class="s-row-sub">${esc(a.yuan || '')} · 仅从左栏收起，聊天记录与记忆均保留</div>
+            </div>
+            <button class="btn btn-ghost btn-xs" data-act="unhide-agent" data-id="${esc(a.id)}">恢复</button>
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
     </div>
     <div class="modal-foot">
       <span style="font-size:var(--fs-hint);color:var(--sy-text-2);">数据保存在本机 data 目录</span>
@@ -1087,6 +1105,23 @@ appEl.addEventListener('click', (e) => {
       if (ag) ag.unread = 0;
       render();
       loadThread(S.activeAgentId).then(() => { render(); scrollChatBottom(); });
+      return;
+    }
+    case 'hide-agent': {
+      const id = btn.dataset.id;
+      const name = (S.agents.find(a => a.id === id) || (S.hiddenAgents || []).find(a => a.id === id))?.name ?? '该助手';
+      api(`/api/agents/${encodeURIComponent(id)}/hide`, { method: 'POST' }).then(async () => {
+        await loadAll();
+        // 若收起的是当前助手，切到首个可见
+        if (S.activeAgentId === id) S.activeAgentId = S.agents[0]?.id ?? null;
+        render();
+        showToast(`已收起「${name}」`, async () => { await api(`/api/agents/${encodeURIComponent(id)}/unhide`, { method: 'POST' }); await loadAll(); render(); });
+      });
+      return;
+    }
+    case 'unhide-agent': {
+      const id = btn.dataset.id;
+      api(`/api/agents/${encodeURIComponent(id)}/unhide`, { method: 'POST' }).then(async () => { await loadAll(); render(); });
       return;
     }
     case 'toggle-strip': {

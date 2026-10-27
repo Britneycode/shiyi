@@ -391,6 +391,16 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   background: var(--sy-primary); color: var(--sy-on-primary);
   font-size: 11px; font-weight: 600; display: inline-grid; place-items: center;
 }
+.agent-hide-btn {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; border-radius: var(--radius-input);
+  display: grid; place-items: center; padding: 0;
+  background: var(--bg-card); border: 1px solid var(--border); color: var(--sy-text-2);
+  opacity: 0; transition: opacity var(--duration-fast); cursor: pointer;
+}
+.agent-hide-btn svg { width: 12px; height: 12px; }
+.agent-item:hover .agent-hide-btn, .agent-hide-btn:focus-visible { opacity: 1; }
+.agent-hide-btn:hover { color: var(--text); border-color: var(--overlay-strong); }
 
 .left-foot {
   flex: none; padding: 10px 12px; border-top: 1px solid var(--border);
@@ -422,6 +432,7 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 .chat-agent-meta .badge { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-head-right { display: flex; align-items: center; gap: 6px; flex: none; }
 .chat-head-count { font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.chat-stats { font-size: var(--fs-hint); color: var(--sy-text-2); white-space: nowrap; font-variant-numeric: tabular-nums lining-nums; }
 
 /* 小窗专属助手选择器和抽屉入口 */
 .mini-agent-select {

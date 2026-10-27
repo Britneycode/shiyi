@@ -72,9 +72,22 @@ export default function registerRoutes(app, ctx) {
 
   // ── overview ─────────────────────────────────────────────────────────────
   app.get("/api/overview", h(async () => {
-    const ov = agents ? await agents.overview() : [];
+    const ovAll = agents ? await agents.overview() : [];
     const s = settings.get();
+    // 软删：拆可见 / 已收起。隐藏项不进 stats 循环（省 IO），以 hiddenAgents 轻量返回供设置管理。
+    const hiddenSet = new Set(s.hiddenAgentIds ?? []);
+    const ov = ovAll.filter((a) => !hiddenSet.has(a.id));
+    const hiddenAgents = ovAll.filter((a) => hiddenSet.has(a.id)).map((a) => ({ id: a.id, name: a.name, yuan: a.yuan }));
     const recentThings = repo ? await repo.listThings({}) : [];
+    // 关系统计：每助手"认识 N 天 · 聊 M 条 · 记 K 条"。note 无 agent 归属，只数 thing。
+    if (threads?._stats) {
+      for (const a of ov) {
+        const st = await threads._stats(a.id);
+        const knownDays = st.firstAt ? Math.max(0, Math.floor((Date.now() - Date.parse(st.firstAt)) / DAY_MS)) : 0;
+        const memoryCount = recentThings.filter((r) => (r.agents || []).includes(a.id) || r.owner === a.id).length;
+        a.stats = { knownDays, msgCount: st.msgCount, memoryCount };
+      }
+    }
     const nowMs = Date.now();
     const upcoming = recentThings
       .filter((t) => t.status !== "done" && t.status !== "dropped")
@@ -83,6 +96,7 @@ export default function registerRoutes(app, ctx) {
     const recentNotes = repo ? await repo.listNotes({}) : [];
     return {
       agents: ov,
+      hiddenAgents,
       settings: s,
       caps: caps?.snapshot?.() ?? {},
       onboarded: !!s.onboarded,
@@ -101,6 +115,19 @@ export default function registerRoutes(app, ctx) {
     await agents?.refresh?.();
     await persona?.invalidate?.(req.params.id);
     return { refreshed: true };
+  }));
+  // 软删（收起）：写 settings.hiddenAgentIds，不动宿主 profile、不动记忆数据
+  app.post("/api/agents/:id/hide", h(async (req) => {
+    const cur = settings.get().hiddenAgentIds ?? [];
+    const out = await settings.patch({ hiddenAgentIds: [...new Set([...cur, req.params.id])] });
+    if (!out.ok) return bad(out.error ?? "bad_patch", "设置校验失败");
+    return { hiddenAgentIds: out.value.hiddenAgentIds };
+  }));
+  app.post("/api/agents/:id/unhide", h(async (req) => {
+    const cur = settings.get().hiddenAgentIds ?? [];
+    const out = await settings.patch({ hiddenAgentIds: cur.filter((x) => x !== req.params.id) });
+    if (!out.ok) return bad(out.error ?? "bad_patch", "设置校验失败");
+    return { hiddenAgentIds: out.value.hiddenAgentIds };
   }));
 
   // ── threads ──────────────────────────────────────────────────────────────
