@@ -1,5 +1,14 @@
 # CHANGELOG — 拾遗 (shiyi)
 
+## v0.1.6（2026-10-29）
+
+- **面板改为两栏纯聊天**：删除「事 / 知」右栏、顶部「刚记下 · 接下来」轻入口条与手动增删改查 API（`routes/ui.js` 现 24 端点，不含 `/api/things` 写操作、`/api/notes`、`/api/search`、`/api/recent`、`/api/upcoming`）。记忆写入只剩「模型自己记」一条路径，`lib/*` 直连 `repo.*` 不受影响；对话内「这件先不问了」保留 `POST /api/things/:id/snooze`。≤640px 视口仍走单栏小窗。
+- **设置页**：面板齿轮改为 iframe 打开 `ui/settings.html`，承接原设置模态的全部分项预算、主动联系（总开关 / 档位 / 没回不追）、已收起助手、记忆与隐私（清除）控件；搜索与 Bilibili 仍为占位。主题走 `?hana-theme`，会话走 `?appSurfaceSession`；关闭由页内 `postMessage` 回传。
+- **全局「稍后再说」落盘**：新增 `POST /api/proactive/snooze`（`hours<=0` 即恢复），状态写 `proactive-state.json` 的 `globalSnoozeUntil`，`/api/overview` 回填，刷新后横幅状态不丢。
+- **养成感**：关系统计行（认识 N 天 · 聊 M 条 · 记 K 条）；助手软删与恢复（`settings.hiddenAgentIds`，不动宿主 profile 与记忆）；幕间生活（`lib/agent-state.js` 的 mood/dwelling 规则演化，冷却 6h）与「（猜测）」信念标注；流式打字机（`lib/model.js` 增量回调 + `threads.appendDelta` + 面板 700ms 轮询局部渲染，非 SSE）。
+- **CDS 视觉**：表面阶梯 / 阴影五档 / 动效令牌桥接；滚动渐隐改 7 档非线性；用户气泡 18px 圆角 + 主色底、助手气泡零边框零背景；按钮 24/28/40 三级 + `.btn-outline`/`.btn-danger`；输入框 `field-sizing: content`；主色由青石蓝切陶土橙（浅 `#d97757` / 深 `#cc6b49`），见 DECISIONS D-004；面板启动态三点跳跃、设置页加载骨架屏。
+- 验证：`node --test tests/*.test.js` → **147/147 pass**；浏览器 mock 实测 1280 / 900 / 600px 两栏与窄屏降级、设置页开关往返、嵌套 iframe 主题。真机复验待新包安装（重点：嵌套 iframe 的主题变量与会话头）。
+
 ## v0.1.5（2026-10-26）
 
 - 面板布局修复（真机约 936 CSS px 视口下三栏被挤坏）：
