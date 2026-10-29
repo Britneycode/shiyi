@@ -8,7 +8,8 @@
 
 ## 已完成
 
-- CDS 第二轮样式落地（随 `6cd0a61` 提交）：`.agent-list`/`.chat-stream`/`.sy-scroll-fade` 换 7 档非线性遮罩；用户气泡 18px 圆角 + `--sy-primary`（=`--accent`）底、助手气泡零边框零背景；按钮 24/28/40 三级 + `.btn-outline`/`.btn-danger`；`.chat-textarea` 加 `field-sizing: content`；`.quick-chip` 去冗余边框；`.sy-skeleton`/`.sy-dots`/`.sy-breathe-dot` 标准件入库（**尚未接到任何加载态**）。主色由青石蓝 `#537D96` 切陶土橙（浅 `#d97757` / 深 `#cc6b49`），决策记 DECISIONS D-004。逐项对照见 `docs/UI-AUDIT-CDS-ROUND2.md` 顶部状态表。
+- 面板加载态接线 + 右栏遗留死 CSS 清理（未提交）：面板启动态改用 `.sy-dots`（三点跳跃）、设置页初始加载改用三行 `.sy-skeleton` 扫光；删除两栏化后失效的 `.dot`/`.a-*`/`.k-*` 规则、`--sy-k-*` 浅/深两套令牌、`@keyframes sy-dot-breathe`、`.sy-breathe-dot` + `sy-clay-breathe`；去掉助手主动消息气泡在 `border: none` 下不生效的 `border-color`。147/147 pass；浏览器 mock 实测两处加载态确实出现（面板 3 点、设置页 3 骨架行→真实卡片），两页无控制台报错。
+- CDS 第二轮样式落地（随 `6cd0a61` 提交）：`.agent-list`/`.chat-stream`/`.sy-scroll-fade` 换 7 档非线性遮罩；用户气泡 18px 圆角 + `--sy-primary`（=`--accent`）底、助手气泡零边框零背景；按钮 24/28/40 三级 + `.btn-outline`/`.btn-danger`；`.chat-textarea` 加 `field-sizing: content`；`.quick-chip` 去冗余边框；`.sy-skeleton`/`.sy-dots` 标准件入库，已接面板启动态与设置页加载态（见下条清理记录）。主色由青石蓝 `#537D96` 切陶土橙（浅 `#d97757` / 深 `#cc6b49`），决策记 DECISIONS D-004。逐项对照见 `docs/UI-AUDIT-CDS-ROUND2.md` 顶部状态表。
 - 设置页接进面板（P2-3）：`ui/settings.html` 由骨架改为真页面，承接原面板设置模态的全部控件（分项预算 / 主动总开关·档位·没回不追 / 已收起助手 / 记忆与隐私·清除 / 搜索与 Bilibili 仍占位），自己取 `/api/overview`，写 `PATCH /api/settings`（点号键）、`POST /api/memory/clear`、`POST /api/agents/:id/unhide`；主题走 `?hana-theme` + 明暗探测，会话走 `?appSurfaceSession`。面板齿轮改开 `.settings-view` iframe（挂 body 上，不被 `render()` 重载），关闭由页内 `postMessage({type:'shiyi:close-settings'})` 回传并 `loadAll()` 刷新。删除面板内设置模态、`toggle-setting`/`change-preset`/`clear-all-memory`/`unhide-agent` 处理与 `refreshBudget`/`PRESET_LABELS`，首次引导模态保留。147/147 pass；`.preview/mock-api.py` 假后端实测「齿轮→改开关/档位→关闭→重开状态仍在」「收起助手→设置页恢复→关闭后面板回填」「midnight/light 两套令牌」。
 - 全局「稍后再说」接后端：新增 `POST /api/proactive/snooze`（`hours<=0` 即恢复）→ `engine.snoozeAll()` 写 `proactive-state.json` 的 `globalSnoozeUntil`；引擎加 `snoozedUntil()` 读前确保磁盘状态已加载；`/api/overview` 带 `snoozedUntil`，`panel.js` 的 `loadAll()` 回填 `S.globalSnoozeUntil`，「稍后再说 / 恢复」改走接口。路由 24 端点，147/147 pass；浏览器 mock 实测「点击 → 刷新 → 横幅仍在 → 恢复」全链路。
 - 面板两栏化 · 删除事/知面板 + 手动 CRUD：`routes/ui.js` 23 端点（删 `/api/things` 增删改查、`/api/notes` 全组、`/api/search`、`/api/recent`、`/api/upcoming`；`/api/overview` 不再返回 `justNow`/`upcoming`）；`ui/panel.js` 1671→~985 行（删右栏/抽屉/轻入口/新建事模态及其 30+ 点击分支、状态与 helper）；`ui/panel.css` 删右栏·轻入口·抽屉·`right-collapsed`·1120px 覆盖层规则，`.workspace` 改 `216px minmax(0,1fr)`；`tests/routes.test.js` 同步删 9 例增删改查契约（端点契约明确变更）。主动消息 `meta` 只有 `{reason,thingId}` 无标题，`关联：xxx` 链接一并移除，不为此留 things 端点。已浏览器 mock 实测（`.preview/panel-mock.html`）。
@@ -37,7 +38,8 @@
 
 ## 停留位置
 
-- 批次已提交并推送：`6cd0a61`，main 与 origin/main 一致。设置页 `ui/settings.html` 由面板齿轮 iframe 打开，manifest 无需单独路由；嵌套 iframe 的主题/会话传递只在本地 mock 验过。
+- 工作区干净；`main` 领先 `origin/main` 两个提交（`2478dc5` 文档同步 + 本次加载态接线/死 CSS 清理），均未推送。
+- 设置页 `ui/settings.html` 由面板齿轮 iframe 打开，manifest 无需单独路由；嵌套 iframe 的主题/会话传递只在本地 mock 验过。
 - 线上仍是 **v0.1.5**（三栏 + 覆盖式抽屉）；本次两栏化尚未发版，真机看到的仍是三栏。
 - 「稍后再说」走 `POST /api/proactive/snooze`，状态落 `proactive-state.json`，刷新回填；「这件先不问了」走 `POST /api/things/:id/snooze`。两者均未在真实宿主复验。
 
@@ -47,7 +49,7 @@
 - [x] P1 布局容器复验：同环境实测滚动渐隐、composer 三态、popover 双环阴影、圆角矩阵。
 - [x] P2 原子组件复验：同环境实测按钮弹簧 transition（linear() 曲线已进 computed）、`.btn:active` 塌陷规则、pill 9999px、3 个 keyframes 挂载、数字 tabular-nums；浅色截图确认。
 - [x] CDS 第二轮复核：D2–D8、D10 已随 `6cd0a61` 落地，D1 执行 C（保留米色底、主色换陶土橙），D9 随右栏删除失效；明细见 `docs/UI-AUDIT-CDS-ROUND2.md` 顶部状态表。
-- [ ] 加载态标准件接线或删除（`.sy-skeleton`/`.sy-dots`/`.sy-breathe-dot` 已定义、0 引用）；顺带清右栏遗留死 CSS（`.dot`/`.a-*`/`.k-*` + `--sy-k-*`，`panel.js` 已无引用）。
+- [x] 加载态标准件接线或删除：`.sy-dots` 接面板启动态、`.sy-skeleton` 接设置页加载态；`.sy-breathe-dot` 无消费者已删。右栏遗留死 CSS（`.dot`/`.a-*`/`.k-*` + `--sy-k-*` + `sy-dot-breathe`）一并清除。D8 由 ⚠️ 转 ✅，见 `docs/UI-AUDIT-CDS-ROUND2.md`。
 - [x] 两栏化复验：`.preview/panel-mock.html`（拦 fetch 喂假数据）1280px→216+1064 两栏、900px→200+700、600px→form-mini 单栏，无横向溢出、无控制台报错；「这件先不问了」toast 正常。
 - [ ] 两栏化 + 设置页 iframe 发版后在真实宿主复验（需先改版本号 + `tools/pack.ps1` + 市场索引；重点看嵌套 iframe 的主题变量与会话头）。
 - [ ] 官方市场收录 PR 已提交并同步到 v0.1.5：`liliMozi/hana-marketplace#153`；等待维护者审核，合并前官方市场不会显示拾遗。

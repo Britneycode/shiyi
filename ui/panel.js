@@ -465,7 +465,7 @@ const appEl = document.getElementById('app');
 
 function render() {
   if (S.loading) {
-    appEl.innerHTML = `<div class="workspace-wrap"><div style="padding:32px;color:var(--sy-text-2);">拾遗加载中…</div></div>`;
+    appEl.innerHTML = `<div class="workspace-wrap"><div style="padding:32px;color:var(--sy-text-2);">拾遗加载中 <span class="sy-dots"><i></i><i></i><i></i></span></div></div>`;
     return;
   }
   if (S.bootError) {

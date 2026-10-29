@@ -14,7 +14,7 @@
 | D5 Composer | ✅ `field-sizing: content`，min/max-height 硬编码已去 | panel.css:544 |
 | D6 Seg 滑块 | ⚠️ 走「退一步」方案：选中态 120ms 背景/阴影过渡，无滑块位移 | panel.css:268-280 |
 | D7 单闭合边框 | ✅ `.quick-chip` 去边框；`.strip-trigger`/`.area-chip` 随右栏删除 | panel.css:557 |
-| D8 加载态标准件 | ⚠️ 类已入库（`.sy-skeleton`/`.sy-dots`/`.sy-breathe-dot`），全仓 0 引用，未接任何加载态 | panel.css:693-730 |
+| D8 加载态标准件 | ✅ `.sy-dots` 接面板启动态（panel.js 渲染）、`.sy-skeleton` 接设置页加载态；`.sy-breathe-dot` 无消费者已删 | panel.css:668-700 |
 | D9 卡片 hover | — 随右栏删除失效（`.thing-card` 不再存在） | — |
 | D10 设置页 | ✅ `ui/settings.html`，面板齿轮 iframe 打开 | ui/settings.html |
 

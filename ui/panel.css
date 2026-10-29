@@ -82,11 +82,6 @@ html {
   --sy-warn: #A86438;
   --sy-warn-bg: rgba(168,100,56,.10);
   --sy-ok: #4E7F56;
-  --sy-k-work: #537D96;
-  --sy-k-study: #8C6B9E;
-  --sy-k-life: #5F8F67;
-  --sy-k-knowledge: #537D96; --sy-k-howto: #5F8F67; --sy-k-experience: #B5734F;
-  --sy-k-idea: #8C6B9E; --sy-k-person: #B9606A; --sy-k-other: #8E9196;
 
   /* ── 1. CDS 表面阶梯（浅色：基于 --bg / --bg-card 的等距 ramp） ── */
   --sy-surface-0: var(--bg);                                         /* 页面基底 / 三栏底层 */
@@ -142,11 +137,6 @@ html[data-tone="dark"] {
   --sy-warn: #E2A378;
   --sy-warn-bg: rgba(226,163,120,.14);
   --sy-ok: #8CC790;
-  --sy-k-work: #8FB4CC;
-  --sy-k-study: #C3A3D6;
-  --sy-k-life: #8CC790;
-  --sy-k-knowledge: #8FB4CC; --sy-k-howto: #8CC790; --sy-k-experience: #E0A27E;
-  --sy-k-idea: #C3A3D6; --sy-k-person: #E59AA6; --sy-k-other: #A3B5C0;
 
   /* ── 1. CDS 表面阶梯（深色：复用 midnight 基底，mix 补中间档） ── */
   --sy-surface-0: var(--bg);        /* #3B4A54 */
@@ -239,17 +229,6 @@ svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 .icon-btn:hover, .icon-btn[aria-pressed="true"] { background: var(--overlay-light); color: var(--text); }
-
-.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--k, var(--sy-k-other)); display: inline-block; animation: sy-dot-breathe 2.4s var(--sy-ease-swift) infinite; }
-.a-work { --k: var(--sy-k-work); }
-.a-study { --k: var(--sy-k-study); }
-.a-life { --k: var(--sy-k-life); }
-.k-knowledge { --k: var(--sy-k-knowledge); }
-.k-howto { --k: var(--sy-k-howto); }
-.k-experience { --k: var(--sy-k-experience); }
-.k-life { --k: var(--sy-k-life); }
-.k-idea { --k: var(--sy-k-idea); }
-.k-person { --k: var(--sy-k-person); }
 
 .badge {
   display: inline-flex; align-items: center; gap: 5px;
@@ -469,7 +448,6 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 }
 .msg-group.assistant.proactive .bubble {
   background: var(--jian-note-bg);
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
 }
 
 /* ★ 主动消息底部轻操作：「稍后再说 · 这件先不问了」（§4.8.6） ★ */
@@ -564,10 +542,6 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
 /* ───────────────── 9. 模态框（首次引导）与设置页 ───────────────── */
 .scrim { position: fixed; inset: 0; z-index: 30; background: var(--sy-scrim); animation: fade var(--duration-fast) var(--ease-out); }
 @keyframes fade { from { opacity: 0; } }
-@keyframes sy-dot-breathe {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: .65; transform: scale(.92); }
-}
 @keyframes sy-dot-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, .35); }
   50%      { box-shadow: 0 0 0 3px transparent; }
@@ -690,7 +664,7 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   50%, 100% { opacity: 0; }
 }
 
-/* ───────────────── CDS 标准件：骨架屏 / 三点跳跃 / 呼吸灯 ───────────────── */
+/* ───────────────── CDS 标准件：骨架屏 / 三点跳跃 ───────────────── */
 
 /* 骨架屏扫光（2s linear 105deg） */
 .sy-skeleton {
@@ -721,15 +695,4 @@ textarea.input { height: auto; padding: 8px 11px; line-height: 1.6; resize: vert
   22%      { opacity: 1; transform: translateY(-2.5px); }
   36%, 70% { opacity: 1; transform: translateY(0); }
   90%, 100%{ opacity: 0; transform: translateY(0); }
-}
-
-/* 陶土呼吸指示灯（3s ease-in-out，用于「活跃/在线」状态） */
-.sy-breathe-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--accent); display: inline-block;
-  animation: sy-clay-breathe 3s ease-in-out infinite;
-}
-@keyframes sy-clay-breathe {
-  0%, 100% { filter: brightness(0.96); transform: scale(0.86); }
-  50%      { filter: brightness(1.06); transform: scale(1); }
 }
