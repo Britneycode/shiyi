@@ -8,6 +8,7 @@
 
 ## 已完成
 
+- v0.1.7 发版：manifest/package 升 0.1.7 + CHANGELOG；宿主官方打包器出 `app-shiyi-0.1.7.zip`（113688 B，sha256 `6adcb8cd…`），`validate-app.mjs --archive` 0 error / 1 warning（`DYNAMIC_DEPENDENCIES_NOT_PROVEN` 属已知静态检查限制）；Release `v0.1.7` 挂 zip + entry 两资产，重下复算 sha256 与条目一致；`market/` 换 0.1.7 条目、删 0.1.6 条目，宿主 `extension-index-build.mjs` 交叉校验 items 相等；raw 线上索引已是 0.1.7。147/147 pass。
 - 面板发灰修复（已装的 v0.1.6 同样中招）：`.agent-list` / `.chat-stream` 的 `mask-image` 原是贯穿容器 100% 高度的透明→黑渐变，窗口一矮整列内容全落在低 alpha 区（用户截图的「几乎看不见」即此）；改为只覆盖顶部内边距宽的窄带（列表 8px、消息流 18px），静止态内容不透明，滚动时仅上边缘渐隐。147/147 pass；`.preview/panel-mock.html` 1280×800 与 700×300 实测列表与消息均清晰、computed mask 已确认；无消费者的 `.sy-scroll-fade` 未动。
 - v0.1.6 本机安装最终成功（02:06 失败 → 02:25 成功）：`extensions/installs.json` 的 `app:shiyi` 已是 0.1.6，integrity 复算 `f440e126…` 与 Release 资产逐字节一致、`checks` 全过。解除方式即前次诊断的「重开宿主后重新从私有源更新」（走新 prepare / 新 stagedId）。**未验证**：首次失败的 message（收据只记 errorCode）。
 - v0.1.6 发版：manifest/package 升 0.1.6 + CHANGELOG；官方打包器出 `app-shiyi-0.1.6.zip`（113690 B，sha256 `f440e126…`），宿主 `validate-app.mjs --archive` 0 error / 1 warning；Release `v0.1.6` 挂 zip + entry 两份资产（重下复算 sha256 与条目一致）；`market/index.v2.json` 由 `tools/market-index.mjs` 重建，与宿主 `extension-index-build.mjs` 结果 items 完全相等。
@@ -41,9 +42,9 @@
 
 ## 停留位置
 
-- 已发 **v0.1.6**：`f2c6dc1` + tag `v0.1.6`，Release 挂 `app-shiyi-0.1.6.zip` 与 entry JSON；`market/index.v2.json` 同版（sha256 与资产逐字节一致，宿主 index builder 交叉校验 items 相等）。
+- 已发 **v0.1.7**：`ddc8245` + tag `v0.1.7`，Release `app-shiyi-0.1.7.zip`（113688 B，sha256 `6adcb8cd…`，重下复算一致）+ entry JSON；`market/index.v2.json` 同版，raw 线上已取到、宿主 index builder 交叉校验 items 相等。
+- 本机宿主装的是 **0.1.6**（`installs.json` 已核）；0.1.7 需在市场页点一次「更新」才会覆盖安装。
 - 设置页 `ui/settings.html` 由面板齿轮 iframe 打开，manifest 无需单独路由；嵌套 iframe 的主题/会话传递只在本地 mock 验过。
-- 线上 **v0.1.6**（两栏 + 设置页 iframe）；真机复验尚未做，本机只能做到 mock 级验证。
 - 「稍后再说」走 `POST /api/proactive/snooze`，状态落 `proactive-state.json`，刷新回填；「这件先不问了」走 `POST /api/things/:id/snooze`。两者均未在真实宿主复验。
 
 ## Next Steps
