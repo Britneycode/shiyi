@@ -53,7 +53,7 @@
 - [x] 加载态标准件接线或删除：`.sy-dots` 接面板启动态、`.sy-skeleton` 接设置页加载态；`.sy-breathe-dot` 无消费者已删。右栏遗留死 CSS（`.dot`/`.a-*`/`.k-*` + `--sy-k-*` + `sy-dot-breathe`）一并清除。D8 由 ⚠️ 转 ✅，见 `docs/UI-AUDIT-CDS-ROUND2.md`。
 - [x] 两栏化复验：`.preview/panel-mock.html`（拦 fetch 喂假数据）1280px→216+1064 两栏、900px→200+700、600px→form-mini 单栏，无横向溢出、无控制台报错；「这件先不问了」toast 正常。
 - [ ] 两栏化 + 设置页 iframe 真实宿主复验（v0.1.6 已发布，装市场包即可；重点看嵌套 iframe 的主题变量与会话头）。
-- [ ] 官方市场收录 PR `liliMozi/hana-marketplace#153` 已 bump 到 v0.1.6（`approvals.json` 的 tag/sha256，commit `61fbd3f`，标题同步改 v0.1.6）；工作流 `Synchronize market index` 停在 `action_required`，等维护者批准运行与审核。合并前官方市场不显示拾遗。
+- [ ] 官方市场收录 PR `liliMozi/hana-marketplace#153` 已 bump 到 v0.1.6（`approvals.json` 的 tag/sha256，commit `61fbd3f`，标题同步改 v0.1.6）；`readme` 字段整段换成仓库 README 的 v0.1.6 两栏版（commit `5599b75`，仍是逐字副本，diff 仅 1 行）；PR 描述同步到 v0.1.6（Release 链接 / sha256 / 38 条目 / 147 tests / 两栏形态，删掉「snooze 未接后端」旧表述）。工作流 `Synchronize market index` 停在 `action_required`，等维护者批准运行与审核。合并前官方市场不显示拾遗。
 - [ ] 宿主 `--smoke` UI 检查（本机无 Electron，未跑）。
 - [x] 全局 snooze 端点 + 持久化（`POST /api/proactive/snooze`，overview 回填）。
 
