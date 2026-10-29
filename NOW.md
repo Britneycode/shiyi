@@ -4,11 +4,12 @@
 
 ## 当前迭代
 
-**面板砍成两栏纯聊天（未发布）**：删掉「事/知」右栏、顶部「刚记下 · 接下来」轻入口条与手动 CRUD API，工作区只剩 左助手 + 中聊天。记忆写入只剩「模型自己记」一条路径（`lib/*` 全部直连 `repo.*`，删 HTTP 路由不影响提取/主动联系）；`POST /api/things/:id/snooze` 保留给对话内「这件先不问了」。147/147 pass；浏览器 mock（1280/900/600px）实测两栏与窄屏降级。
+**面板砍成两栏纯聊天（已发 v0.1.6）**：删掉「事/知」右栏、顶部「刚记下 · 接下来」轻入口条与手动 CRUD API，工作区只剩 左助手 + 中聊天。记忆写入只剩「模型自己记」一条路径（`lib/*` 全部直连 `repo.*`，删 HTTP 路由不影响提取/主动联系）；`POST /api/things/:id/snooze` 保留给对话内「这件先不问了」。147/147 pass；浏览器 mock（1280/900/600px）实测两栏与窄屏降级。
 
 ## 已完成
 
-- 面板加载态接线 + 右栏遗留死 CSS 清理（未提交）：面板启动态改用 `.sy-dots`（三点跳跃）、设置页初始加载改用三行 `.sy-skeleton` 扫光；删除两栏化后失效的 `.dot`/`.a-*`/`.k-*` 规则、`--sy-k-*` 浅/深两套令牌、`@keyframes sy-dot-breathe`、`.sy-breathe-dot` + `sy-clay-breathe`；去掉助手主动消息气泡在 `border: none` 下不生效的 `border-color`。147/147 pass；浏览器 mock 实测两处加载态确实出现（面板 3 点、设置页 3 骨架行→真实卡片），两页无控制台报错。
+- v0.1.6 发版：manifest/package 升 0.1.6 + CHANGELOG；官方打包器出 `app-shiyi-0.1.6.zip`（113690 B，sha256 `f440e126…`），宿主 `validate-app.mjs --archive` 0 error / 1 warning；Release `v0.1.6` 挂 zip + entry 两份资产（重下复算 sha256 与条目一致）；`market/index.v2.json` 由 `tools/market-index.mjs` 重建，与宿主 `extension-index-build.mjs` 结果 items 完全相等。
+- 面板加载态接线 + 右栏遗留死 CSS 清理：面板启动态改用 `.sy-dots`（三点跳跃）、设置页初始加载改用三行 `.sy-skeleton` 扫光；删除两栏化后失效的 `.dot`/`.a-*`/`.k-*` 规则、`--sy-k-*` 浅/深两套令牌、`@keyframes sy-dot-breathe`、`.sy-breathe-dot` + `sy-clay-breathe`；去掉助手主动消息气泡在 `border: none` 下不生效的 `border-color`。147/147 pass；浏览器 mock 实测两处加载态确实出现（面板 3 点、设置页 3 骨架行→真实卡片），两页无控制台报错。
 - CDS 第二轮样式落地（随 `6cd0a61` 提交）：`.agent-list`/`.chat-stream`/`.sy-scroll-fade` 换 7 档非线性遮罩；用户气泡 18px 圆角 + `--sy-primary`（=`--accent`）底、助手气泡零边框零背景；按钮 24/28/40 三级 + `.btn-outline`/`.btn-danger`；`.chat-textarea` 加 `field-sizing: content`；`.quick-chip` 去冗余边框；`.sy-skeleton`/`.sy-dots` 标准件入库，已接面板启动态与设置页加载态（见下条清理记录）。主色由青石蓝 `#537D96` 切陶土橙（浅 `#d97757` / 深 `#cc6b49`），决策记 DECISIONS D-004。逐项对照见 `docs/UI-AUDIT-CDS-ROUND2.md` 顶部状态表。
 - 设置页接进面板（P2-3）：`ui/settings.html` 由骨架改为真页面，承接原面板设置模态的全部控件（分项预算 / 主动总开关·档位·没回不追 / 已收起助手 / 记忆与隐私·清除 / 搜索与 Bilibili 仍占位），自己取 `/api/overview`，写 `PATCH /api/settings`（点号键）、`POST /api/memory/clear`、`POST /api/agents/:id/unhide`；主题走 `?hana-theme` + 明暗探测，会话走 `?appSurfaceSession`。面板齿轮改开 `.settings-view` iframe（挂 body 上，不被 `render()` 重载），关闭由页内 `postMessage({type:'shiyi:close-settings'})` 回传并 `loadAll()` 刷新。删除面板内设置模态、`toggle-setting`/`change-preset`/`clear-all-memory`/`unhide-agent` 处理与 `refreshBudget`/`PRESET_LABELS`，首次引导模态保留。147/147 pass；`.preview/mock-api.py` 假后端实测「齿轮→改开关/档位→关闭→重开状态仍在」「收起助手→设置页恢复→关闭后面板回填」「midnight/light 两套令牌」。
 - 全局「稍后再说」接后端：新增 `POST /api/proactive/snooze`（`hours<=0` 即恢复）→ `engine.snoozeAll()` 写 `proactive-state.json` 的 `globalSnoozeUntil`；引擎加 `snoozedUntil()` 读前确保磁盘状态已加载；`/api/overview` 带 `snoozedUntil`，`panel.js` 的 `loadAll()` 回填 `S.globalSnoozeUntil`，「稍后再说 / 恢复」改走接口。路由 24 端点，147/147 pass；浏览器 mock 实测「点击 → 刷新 → 横幅仍在 → 恢复」全链路。
@@ -38,9 +39,9 @@
 
 ## 停留位置
 
-- 工作区干净；`main` 领先 `origin/main` 两个提交（`2478dc5` 文档同步 + 本次加载态接线/死 CSS 清理），均未推送。
+- 已发 **v0.1.6**：`f2c6dc1` + tag `v0.1.6`，Release 挂 `app-shiyi-0.1.6.zip` 与 entry JSON；`market/index.v2.json` 同版（sha256 与资产逐字节一致，宿主 index builder 交叉校验 items 相等）。
 - 设置页 `ui/settings.html` 由面板齿轮 iframe 打开，manifest 无需单独路由；嵌套 iframe 的主题/会话传递只在本地 mock 验过。
-- 线上仍是 **v0.1.5**（三栏 + 覆盖式抽屉）；本次两栏化尚未发版，真机看到的仍是三栏。
+- 线上 **v0.1.6**（两栏 + 设置页 iframe）；真机复验尚未做，本机只能做到 mock 级验证。
 - 「稍后再说」走 `POST /api/proactive/snooze`，状态落 `proactive-state.json`，刷新回填；「这件先不问了」走 `POST /api/things/:id/snooze`。两者均未在真实宿主复验。
 
 ## Next Steps
@@ -51,8 +52,8 @@
 - [x] CDS 第二轮复核：D2–D8、D10 已随 `6cd0a61` 落地，D1 执行 C（保留米色底、主色换陶土橙），D9 随右栏删除失效；明细见 `docs/UI-AUDIT-CDS-ROUND2.md` 顶部状态表。
 - [x] 加载态标准件接线或删除：`.sy-dots` 接面板启动态、`.sy-skeleton` 接设置页加载态；`.sy-breathe-dot` 无消费者已删。右栏遗留死 CSS（`.dot`/`.a-*`/`.k-*` + `--sy-k-*` + `sy-dot-breathe`）一并清除。D8 由 ⚠️ 转 ✅，见 `docs/UI-AUDIT-CDS-ROUND2.md`。
 - [x] 两栏化复验：`.preview/panel-mock.html`（拦 fetch 喂假数据）1280px→216+1064 两栏、900px→200+700、600px→form-mini 单栏，无横向溢出、无控制台报错；「这件先不问了」toast 正常。
-- [ ] 两栏化 + 设置页 iframe 发版后在真实宿主复验（需先改版本号 + `tools/pack.ps1` + 市场索引；重点看嵌套 iframe 的主题变量与会话头）。
-- [ ] 官方市场收录 PR 已提交并同步到 v0.1.5：`liliMozi/hana-marketplace#153`；等待维护者审核，合并前官方市场不会显示拾遗。
+- [ ] 两栏化 + 设置页 iframe 真实宿主复验（v0.1.6 已发布，装市场包即可；重点看嵌套 iframe 的主题变量与会话头）。
+- [ ] 官方市场收录 PR `liliMozi/hana-marketplace#153` 仍指向 v0.1.5；bump 到 v0.1.6 需按 RUNBOOK 更新 `approvals.json` 的 tag/sha256（市场不自动发现新版本）。合并前官方市场不显示拾遗。
 - [ ] 宿主 `--smoke` UI 检查（本机无 Electron，未跑）。
 - [x] 全局 snooze 端点 + 持久化（`POST /api/proactive/snooze`，overview 回填）。
 
