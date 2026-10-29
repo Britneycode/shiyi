@@ -4,13 +4,13 @@
 
 ## 项目定位
 
-**拾遗（shiyi）**— HanaAgent v2 app：聊天 + 记事（事/知卡片）+ 主动跟进 + 一键交给 Hana 主对话。
+**拾遗（shiyi）**— HanaAgent v2 app：聊天 + 模型自主记事（面板不再展示／增删）+ 主动跟进 + 一键交给 Hana 主对话。
 宿主：[openhanako (HanaAgent)](https://github.com/liliMozi/openhanako)，v2 app 格式（manifestVersion: 2）。
 PLAN.md（v9，1162 行）为后端逻辑、存储、API 与验收用例的唯一真相源。
 
 ## 当前核心状态
 
-- 阶段：v1.0.0 已交付（4 个里程碑全落地，135/135 pass）
+- 阶段：线上 v0.1.5；工作区在 CDS + 养成改造后的未发布态（两栏纯聊天，147/147 pass）
 - 进度焦点：见 [NOW.md](NOW.md)
 - 阻塞点：无（前端无自动化测试为已知限制，见 CHANGELOG §Step 4）
 
@@ -34,7 +34,7 @@ PLAN.md（v9，1162 行）为后端逻辑、存储、API 与验收用例的唯�
 | 模块 | 路径 | 一句话职责 |
 |---|---|---|
 | 应用清单 | `manifest.json` | realization:page、siteNavEntry、panel.html 路由 |
-| REST 路由 | `routes/ui.js` | 35 端点，`BASE=/api/apps/shiyi/routes`，统一 {ok,code,message} |
+| REST 路由 | `routes/ui.js` | 24 端点（无手动增删改查），`BASE=/api/apps/shiyi/routes`，统一 {ok,code,message} |
 | 设置 | `lib/settings.js` | settings.json 原子写（tmp→rename + .bak） |
 | 会话历史 | `lib/threads.js` | append/list/read/clear，meta 存 proactive/handoff |
 | 记忆仓库 | `lib/memory/repo.js` | Markdown 真相源 + index.json 缓存 + reconcile 对账 |
@@ -46,7 +46,8 @@ PLAN.md（v9，1162 行）为后端逻辑、存储、API 与验收用例的唯�
 | 横幅 | `lib/proactive/banner.js` | turn_start 租约、75s、回执 |
 | 交接 | `lib/handoff.js` | session:create/update/send，失败退化复制 |
 | 主对话工具 | `lib/tools-host.js` | main 放行；ch_/dm_/外部拒绝不泄密 |
-| 面板 | `ui/panel.html|.css|.js` | 三栏整页 / `?form=mini` 小窗，v9 原型改造 |
+| 面板 | `ui/panel.html|.css|.js` | 左助手 + 中聊天两栏；≤640px 单栏小窗 |
+| 设置页 | `ui/settings.html` | iframe 嵌入式（面板齿轮打开），自取 `/api/overview` 写 `/api/settings` |
 
 ## 参考仓库（已对照实现）
 

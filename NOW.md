@@ -4,10 +4,13 @@
 
 ## 当前迭代
 
-**面板布局修复已发布 v0.1.5**：1120px 以下右栏改覆盖式抽屉（默认收起），助手名不再被长模型名挤成竖排，轻入口与输入框不再被裁；149/149 pass、宿主 validate-app 0 error，线上 zip 与自定义源索引 sha256 一致。官方市场收录 PR #153 已同步到 v0.1.5，等待审核。真机窗口布局复验待用户点「可更新」安装后确认。
+**面板砍成两栏纯聊天（未发布）**：删掉「事/知」右栏、顶部「刚记下 · 接下来」轻入口条与手动 CRUD API，工作区只剩 左助手 + 中聊天。记忆写入只剩「模型自己记」一条路径（`lib/*` 全部直连 `repo.*`，删 HTTP 路由不影响提取/主动联系）；`POST /api/things/:id/snooze` 保留给对话内「这件先不问了」。147/147 pass；浏览器 mock（1280/900/600px）实测两栏与窄屏降级。
 
 ## 已完成
 
+- 设置页接进面板（P2-3）：`ui/settings.html` 由骨架改为真页面，承接原面板设置模态的全部控件（分项预算 / 主动总开关·档位·没回不追 / 已收起助手 / 记忆与隐私·清除 / 搜索与 Bilibili 仍占位），自己取 `/api/overview`，写 `PATCH /api/settings`（点号键）、`POST /api/memory/clear`、`POST /api/agents/:id/unhide`；主题走 `?hana-theme` + 明暗探测，会话走 `?appSurfaceSession`。面板齿轮改开 `.settings-view` iframe（挂 body 上，不被 `render()` 重载），关闭由页内 `postMessage({type:'shiyi:close-settings'})` 回传并 `loadAll()` 刷新。删除面板内设置模态、`toggle-setting`/`change-preset`/`clear-all-memory`/`unhide-agent` 处理与 `refreshBudget`/`PRESET_LABELS`，首次引导模态保留。147/147 pass；`.preview/mock-api.py` 假后端实测「齿轮→改开关/档位→关闭→重开状态仍在」「收起助手→设置页恢复→关闭后面板回填」「midnight/light 两套令牌」。
+- 全局「稍后再说」接后端：新增 `POST /api/proactive/snooze`（`hours<=0` 即恢复）→ `engine.snoozeAll()` 写 `proactive-state.json` 的 `globalSnoozeUntil`；引擎加 `snoozedUntil()` 读前确保磁盘状态已加载；`/api/overview` 带 `snoozedUntil`，`panel.js` 的 `loadAll()` 回填 `S.globalSnoozeUntil`，「稍后再说 / 恢复」改走接口。路由 24 端点，147/147 pass；浏览器 mock 实测「点击 → 刷新 → 横幅仍在 → 恢复」全链路。
+- 面板两栏化 · 删除事/知面板 + 手动 CRUD：`routes/ui.js` 23 端点（删 `/api/things` 增删改查、`/api/notes` 全组、`/api/search`、`/api/recent`、`/api/upcoming`；`/api/overview` 不再返回 `justNow`/`upcoming`）；`ui/panel.js` 1671→~985 行（删右栏/抽屉/轻入口/新建事模态及其 30+ 点击分支、状态与 helper）；`ui/panel.css` 删右栏·轻入口·抽屉·`right-collapsed`·1120px 覆盖层规则，`.workspace` 改 `216px minmax(0,1fr)`；`tests/routes.test.js` 同步删 9 例增删改查契约（端点契约明确变更）。主动消息 `meta` 只有 `{reason,thingId}` 无标题，`关联：xxx` 链接一并移除，不为此留 things 端点。已浏览器 mock 实测（`.preview/panel-mock.html`）。
 - 养成改造批 4 · 流式打字机（COMPANION-PLAN 批 4）：后端推流改造 + 前端渲染循环重写。`lib/model.js` `readStream` 加 `onDelta` 增量回调（NDJSON text-delta 边读边抛，`parsedSoFar` 跟踪行界，非流路径整段回放一次）；`chat.js runTurn/processTurn` 透传 → `threads.appendDelta`（累加 `turn.partial`，不落盘瞬态）+ `threads.currentTurn`；`GET /api/threads/:agentId` 附 `generating:{turnId,partial,startedAt}`；panel.js `S.streaming` + 700ms 轮询 + `updateStreamingBubble` 局部 DOM 更新（不整页 render，避免重置输入框）；`stream-caret` 光标动画 CSS。选型 Plan B（轮询）——SSE 需宿主 Hono `c.stream()` 支持，留真机 PoC。154/154 全绿（新增 tests/stream.test.js），浏览器实测端到端通过。
 - 养成改造批 3 · 幕间生活 + 信念标记（COMPANION-PLAN 批 3）：新建 `lib/agent-state.js`（per-agent `{mood,dwelling,lastEvolvedAt}` JSON，MOODS/DWELLINGS 轮换池，规则演化冷却 6h）；演化挂 `engine.tick()` 的 enabled 检查之前；`prompts.js` 加第 4.5 块 `stateBlock`（`BUDGET_STATE=120`）+ thingsBlock/notesBlock inferred 加"（猜测）"；`chat.js buildSystem` 传 agentState；engine `buildPrompt` 主动消息带状态开场。信念 `belief`（不叫 kind，note kind 已占）：`markdown.js` FM_ORDER/serialize/normalize + `repo.js` thingRow/noteRow/createThing/createNote/updateThing/updateNote（stated 可升级 inferred，反向不动）+ `prompts.js` EXTRACT_SYSTEM 加标注规则（"不确定不记"放宽为"拿不准标 inferred"）+ `extract.js` 三分支白名单读 + new_note L3 去重时 stated 升级 inferred。`/api/overview` 加 `a.life`；panel.js chat-head 加 `心情 X`。149/149 全绿，已浏览器实测。
 - 养成改造批 1 · 关系统计行（COMPANION-PLAN 批 1）：chat-head 显示「认识 N 天 · 聊 M 条 · 记 K 条」。新增 `threads._stats`（首条 at + 现存/归档消息总数）；`/api/overview` 给每助手注入 `stats`（memoryCount 只数 thing 的 owner/agents，note 无归属不计）；panel.js loadAll+renderCenterCol、panel.css `.chat-stats`（fs-hint+tabular-nums）。纯展示零行为改动；已浏览器实测。规划见 docs/COMPANION-PLAN.md。
@@ -33,19 +36,20 @@
 
 ## 停留位置
 
-- 代码全部落地；最后一处改动是 `ui/panel.css` / `ui/panel.js` 的布局修复（**已发布 v0.1.5**，commit `2864750`）。浏览器 mock 实测 936/1100/1440 CSS px + mini；149/149。真机窗口复验待用户在市场页点「可更新」。
-- 真实宿主里助手列表已能显示（v0.1.4 之后）；面板在宿主中的完整行为仍未逐项验收。
-- 前端 `panel.js` 最后一处行为：「稍后再说」「交给 Hana…」为本地降级态（无对应后端端点），见 CHANGELOG §已知限制。
+- 未提交的工作区改动：`routes/ui.js`、`ui/panel.js`、`ui/panel.css`、`tests/routes.test.js`（两栏化）+ 未跟踪 `ui/settings.html`（设置页，由面板齿轮 iframe 打开；manifest 无需单独路由）。设置页的嵌套 iframe 主题/会话传递只在本地 mock 验过。
+- 线上仍是 **v0.1.5**（三栏 + 覆盖式抽屉）；本次两栏化尚未发版，真机看到的仍是三栏。
+- 「稍后再说」走 `POST /api/proactive/snooze`，状态落 `proactive-state.json`，刷新回填；「这件先不问了」走 `POST /api/things/:id/snooze`。两者均未在真实宿主复验。
 
 ## Next Steps
 
 - [x] P0 视觉复验：已在 `.preview/audit-p0.html`（假数据注入）实测，浅色/深色、抽屉/模态/Toast、IME 守卫全过；指南在 `docs/CDS-P0-验收指南.md`。
 - [x] P1 布局容器复验：同环境实测滚动渐隐、composer 三态、popover 双环阴影、圆角矩阵。
 - [x] P2 原子组件复验：同环境实测按钮弹簧 transition（linear() 曲线已进 computed）、`.btn:active` 塌陷规则、pill 9999px、3 个 keyframes 挂载、数字 tabular-nums；浅色截图确认。
-- [ ] 用户在宿主市场页点「可更新」装 **v0.1.5**，确认三栏不再挤压、右栏可点开成抽屉；这是布局修复的端到端验收。
+- [x] 两栏化复验：`.preview/panel-mock.html`（拦 fetch 喂假数据）1280px→216+1064 两栏、900px→200+700、600px→form-mini 单栏，无横向溢出、无控制台报错；「这件先不问了」toast 正常。
+- [ ] 两栏化 + 设置页 iframe 发版后在真实宿主复验（需先改版本号 + `tools/pack.ps1` + 市场索引；重点看嵌套 iframe 的主题变量与会话头）。
 - [ ] 官方市场收录 PR 已提交并同步到 v0.1.5：`liliMozi/hana-marketplace#153`；等待维护者审核，合并前官方市场不会显示拾遗。
 - [ ] 宿主 `--smoke` UI 检查（本机无 Electron，未跑）。
-- [ ] 若宿主可用，补全局 snooze 与 handoff 建卡端点（当前为前端降级）。
+- [x] 全局 snooze 端点 + 持久化（`POST /api/proactive/snooze`，overview 回填）。
 
 ## 阻塞点
 

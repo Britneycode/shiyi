@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>拾遗 · 设置</title>
+<link rel="stylesheet" href="panel.css">
+<style>
+  html, body { overflow-y: auto; }
+  body { background: var(--bg); color: var(--text); }
+  .settings-shell { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 18px; }
+  .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .settings-head h1 { font-family: var(--font-serif); font-size: 20px; font-weight: 600; margin: 0; }
+  .settings-group { display: flex; flex-direction: column; gap: 8px; }
+  .settings-group > h2 { font-size: var(--fs-caption); font-weight: 600; color: var(--sy-text-2); margin: 0; letter-spacing: .02em; }
+  .settings-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-card); padding: 12px 14px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .settings-card .desc { font-size: var(--fs-hint); color: var(--sy-text-2); }
+  .settings-note { text-align: center; font-size: var(--fs-hint); color: var(--sy-text-2); }
+</style>
+</head>
+<body>
+<div class="settings-shell">
+  <header class="settings-head">
+    <h1>设置</h1>
+    <button class="btn btn-ghost btn-sm" id="btn-close" title="关闭设置">✕ 关闭</button>
+  </header>
+  <div id="s-body"><div class="settings-note" style="padding:24px 0;">加载中…</div></div>
+</div>
+<script>
+(function () {
+'use strict';
+
+/* ── 宿主主题与明暗：与 panel.js 同一套（主题名由面板拼进 iframe URL） ── */
+const q = new URLSearchParams(location.search);
+const theme = q.get('hana-theme');
+if (theme) document.documentElement.dataset.theme = theme;
+(function detectTone() {
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  const c = document.createElement('canvas').getContext('2d');
+  c.fillStyle = v || '#F8F4ED';
+  const n = parseInt(c.fillStyle.slice(1), 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((x) => {
+    const s = x / 255;
+    return s <= .03928 ? s / 12.92 : Math.pow((s + .055) / 1.055, 2.4);
+  });
+  const L = .2126 * ch[0] + .7152 * ch[1] + .0722 * ch[2];
+  document.documentElement.dataset.tone = L < .3 ? 'dark' : 'light';
+})();
+
+const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC_MAP[c]);
+
+const BASE = '/api/apps/shiyi/routes';
+const session = q.get('appSurfaceSession') || q.get('hana-surface-session') || q.get('session') || '';
+const PRESET_LABELS = { restrained: '克制（发3 / 生6 / 评12）', moderate: '适中（发6 / 生12 / 评24）', active: '积极（发12 / 生24 / 评48）' };
+
+const S = { settings: null, budget: null, hiddenAgents: [], error: null };
+
+async function api(path, opts = {}) {
+  const res = await fetch(BASE + path, {
+    method: opts.method || 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session ? { 'X-Hana-App-Surface-Session': session } : {}),
+    },
+    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+  });
+  let data = null;
+  try { data = await res.json(); } catch { /* 非 JSON 错误页 */ }
+  if (!data || typeof data !== 'object') return { ok: false, code: 'http_' + res.status, message: '接口无响应' };
+  if (!data.ok) showToast(data.message || ('失败：' + (data.code || 'error')));
+  return data;
+}
+
+let toastTimer = null;
+function showToast(msg) {
+  let el = document.getElementById('s-toast');
+  if (!el) { el = document.createElement('div'); el.id = 's-toast'; el.className = 'toast'; document.body.appendChild(el); }
+  el.textContent = msg;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.remove(), 4000);
+}
+
+function close() {
+  if (window.parent !== window) window.parent.postMessage({ type: 'shiyi:close-settings' }, '*');
+  else history.back();
+}
+document.getElementById('btn-close').addEventListener('click', close);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+/* ── 取数 ── */
+async function load() {
+  const r = await api('/api/overview');
+  if (!r.ok) { S.error = r.message || '读取设置失败'; render(); return; }
+  S.settings = r.settings || {};
+  S.budget = r.budget || null;
+  S.hiddenAgents = r.hiddenAgents || [];
+  S.error = null;
+  render();
+}
+
+/* ── 渲染 ── */
+function render() {
+  const el = document.getElementById('s-body');
+  if (S.error) {
+    el.innerHTML = `<div class="settings-note" style="padding:24px 0;">${esc(S.error)}</div>`;
+    return;
+  }
+  const p = S.settings?.proactive ?? {};
+  const m = S.settings?.memory ?? {};
+  const preset = p.preset ?? 'restrained';
+  const cap = p.dailyCap ?? 3;
+
+  el.innerHTML = `
+    <section class="settings-group">
+      <h2>聊天显示</h2>
+      <div class="settings-card"><span>主题与气泡</span><span class="desc">跟随宿主主题</span></div>
+    </section>
+
+    <section class="settings-group">
+      <h2>主动联系</h2>
+      <div class="budget-meters num">
+        <div class="budget-cell"><b>${S.budget?.evaluated ?? 0} / ${cap * 4}</b><span>护栏评估 (Evaluated)</span></div>
+        <div class="budget-cell"><b>${S.budget?.generated ?? 0} / ${cap * 2}</b><span>模型生成 (Generated)</span></div>
+        <div class="budget-cell"><b>${S.budget?.sent ?? 0} / ${cap}</b><span>实际投递 (Sent)</span></div>
+      </div>
+      <div class="s-group">
+        <div class="s-row">
+          <div>
+            <div>主动关心总开关</div>
+            <div class="s-row-sub">关闭后不评估、不生成、不发送自动关心（明确的到时提醒仍生效）</div>
+          </div>
+          <button class="switch" role="switch" aria-checked="${p.enabled !== false}" data-toggle="proactive.enabled"></button>
+        </div>
+        <div class="s-row">
+          <div>
+            <div>主动程度档位</div>
+            <div class="s-row-sub">安静时段 ${p.quiet?.start ?? '23:00'}–${p.quiet?.end ?? '08:00'} · 候选 SKIP 冷却 2 小时</div>
+          </div>
+          <select class="input" style="width:auto;height:32px;" id="preset-select">
+            ${Object.entries(PRESET_LABELS).map(([k, v]) => `<option value="${k}" ${preset === k ? 'selected' : ''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div class="s-row">
+          <div>
+            <div>没回不追</div>
+            <div class="s-row-sub">任一线程 24h 内有未回复的主动消息时不追问；同一事两次未回自动停问</div>
+          </div>
+          <button class="switch" role="switch" aria-checked="${p.noChaseUnanswered !== false}" data-toggle="proactive.noChaseUnanswered"></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-group">
+      <h2>伙伴管理</h2>
+      <div class="s-group">
+        ${S.hiddenAgents.length ? S.hiddenAgents.map((a) => `
+          <div class="s-row">
+            <div>
+              <div>${esc(a.name)}</div>
+              <div class="s-row-sub">${esc(a.yuan || '')} · 仅从左栏收起，聊天记录与记忆均保留</div>
+            </div>
+            <button class="btn btn-ghost btn-xs" data-unhide="${esc(a.id)}">恢复</button>
+          </div>`).join('') : `
+          <div class="s-row">
+            <div>
+              <div>没有收起的助手</div>
+              <div class="s-row-sub">在面板左栏点助手右侧的 × 可收起</div>
+            </div>
+          </div>`}
+      </div>
+    </section>
+
+    <section class="settings-group">
+      <h2>搜索与 Bilibili</h2>
+      <div class="settings-card"><span>外部检索开关</span><span class="desc">待接入</span></div>
+    </section>
+
+    <section class="settings-group">
+      <h2>模型与用量</h2>
+      <div class="s-group">
+        <div class="s-row">
+          <div>
+            <div>从应用内聊天记事</div>
+            <div class="s-row-sub">每条消息带原始时间换算相对日期；冲突不合并</div>
+          </div>
+          <button class="switch" role="switch" aria-checked="${m.learnFromChat !== false}" data-toggle="memory.learnFromChat"></button>
+        </div>
+        <div class="s-row">
+          <div>
+            <div>从 Hana 主对话学习</div>
+            <div class="s-row-sub">仅收标准主会话；群聊、助手私信、外部平台一律排除</div>
+          </div>
+          <button class="switch" role="switch" aria-checked="${m.learnFromMain !== false}" data-toggle="memory.learnFromMain"></button>
+        </div>
+        <div class="s-row">
+          <div>
+            <div>清理范围</div>
+            <div class="s-row-sub">清除全部记忆会移入 .trash/（Hana 宿主原始对话不在可删范围）</div>
+          </div>
+          <button class="btn btn-secondary btn-xs" id="btn-clear-memory" style="color:var(--danger);">清除全部记忆</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="settings-note">数据保存在本机 data 目录</div>`;
+}
+
+/* ── 交互 ── */
+document.getElementById('s-body').addEventListener('click', (e) => {
+  const sw = e.target.closest('[data-toggle]');
+  if (sw) {
+    const key = sw.dataset.toggle;
+    const path = key.split('.');
+    const leaf = path.at(-1);
+    const obj = path.slice(0, -1).reduce((o, k) => o?.[k], S.settings);
+    if (!obj) return;
+    api('/api/settings', { method: 'PATCH', body: { [key]: obj[leaf] === false } }).then((r) => {
+      if (r.ok && r.settings) { S.settings = r.settings; render(); }
+    });
+    return;
+  }
+  const un = e.target.closest('[data-unhide]');
+  if (un) {
+    api(`/api/agents/${encodeURIComponent(un.dataset.unhide)}/unhide`, { method: 'POST' }).then((r) => { if (r.ok) load(); });
+    return;
+  }
+  if (e.target.closest('#btn-clear-memory')) {
+    api('/api/memory/clear', { method: 'POST', body: { includeChats: false } }).then((r) => {
+      if (!r.ok) return;
+      showToast('已将全部事、知与排除记录移入 .trash/（聊天记录保留）');
+    });
+  }
+});
+
+document.getElementById('s-body').addEventListener('change', (e) => {
+  if (e.target.id !== 'preset-select') return;
+  const preset = e.target.value;
+  const dailyCap = preset === 'active' ? 12 : preset === 'moderate' ? 6 : 3;
+  api('/api/settings', { method: 'PATCH', body: { 'proactive.preset': preset, 'proactive.dailyCap': dailyCap } }).then((r) => {
+    if (r.ok && r.settings) { S.settings = r.settings; render(); }
+  });
+});
+
+load();
+})();
+</script>
+</body>
+</html>

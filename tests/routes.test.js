@@ -74,7 +74,7 @@ function setup() {
 
 test("路由按 Hono 契约注册：路径以 /api/ 开头且不含 query", () => {
   const { app } = setup();
-  assert.ok(app.routes.size >= 30, `端点数偏少：${app.routes.size}`);
+  assert.ok(app.routes.size >= 20, `端点数偏少：${app.routes.size}`);
   for (const key of app.routes.keys()) {
     const path = key.split(" ")[1];
     assert.ok(path.startsWith("/api/"), `路径须以 /api/ 开头：${path}`);
@@ -92,70 +92,6 @@ test("全部端点在 Hono 契约下都答出统一信封，不抛异常", async
   }
 });
 
-test("GET /api/things 返回 ok 信封与事列表", async () => {
-  const { app } = setup();
-  const out = await call(app, "GET", "/api/things");
-  assert.equal(out.ok, true);
-  assert.deepEqual(out.things, []);
-});
-
-test("POST /api/things 落库并回传 thing", async () => {
-  const { app } = setup();
-  const out = await call(app, "POST", "/api/things", { body: { title: "写周报", area: "work" } });
-  assert.equal(out.ok, true);
-  assert.equal(out.thing.title, "写周报");
-});
-
-test("GET /api/things/:id 按路径参数取回那件事", async () => {
-  const { app } = setup();
-  const created = await call(app, "POST", "/api/things", { body: { title: "买牛奶", area: "life" } });
-  const out = await call(app, "GET", `/api/things/${created.thing.id}`);
-  assert.equal(out.ok, true);
-  assert.equal(out.thing.title, "买牛奶");
-});
-
-test("GET /api/things/:id 取不到时答 not_found", async () => {
-  const { app } = setup();
-  const out = await call(app, "GET", "/api/things/t_none");
-  assert.equal(out.ok, false);
-  assert.equal(out.code, "not_found");
-});
-
-test("GET /api/things 按 query 过滤", async () => {
-  const { app } = setup();
-  await call(app, "POST", "/api/things", { body: { title: "写周报", area: "work" } });
-  await call(app, "POST", "/api/things", { body: { title: "背单词", area: "study" } });
-  const work = await call(app, "GET", "/api/things", { query: { area: "work" } });
-  assert.equal(work.ok, true);
-  assert.equal(work.things.length, 1);
-  assert.equal(work.things[0].title, "写周报");
-});
-
-test("PATCH /api/things/:id 按请求体更新", async () => {
-  const { app } = setup();
-  const created = await call(app, "POST", "/api/things", { body: { title: "写周报", area: "work" } });
-  const out = await call(app, "PATCH", `/api/things/${created.thing.id}`, { body: { title: "写月报" } });
-  assert.equal(out.ok, true);
-  assert.equal(out.thing.title, "写月报");
-});
-
-test("DELETE /api/things/:id 删除后取不到", async () => {
-  const { app } = setup();
-  const created = await call(app, "POST", "/api/things", { body: { title: "写周报", area: "work" } });
-  const del = await call(app, "DELETE", `/api/things/${created.thing.id}`);
-  assert.equal(del.ok, true);
-  const after = await call(app, "GET", `/api/things/${created.thing.id}`);
-  assert.equal(after.ok, false);
-  assert.equal(after.code, "not_found");
-});
-
-test("GET /api/notes 返回 ok 信封", async () => {
-  const { app } = setup();
-  const out = await call(app, "GET", "/api/notes");
-  assert.equal(out.ok, true);
-  assert.deepEqual(out.notes, []);
-});
-
 test("GET /api/settings 返回设置", async () => {
   const { app } = setup();
   const out = await call(app, "GET", "/api/settings");
@@ -167,11 +103,31 @@ test("GET /api/overview 返回 ok 信封", async () => {
   const { app } = setup();
   const out = await call(app, "GET", "/api/overview");
   assert.equal(out.ok, true);
-  assert.ok(Array.isArray(out.upcoming));
+  assert.ok(Array.isArray(out.agents));
 });
 
-test("GET /api/things 请求体缺失时不应崩，仍答信封", async () => {
+test("POST 请求体缺失时不应崩，仍答信封", async () => {
   const { app } = setup();
-  const out = await call(app, "POST", "/api/things");
+  const out = await call(app, "POST", "/api/threads/x/messages");
   assert.equal(typeof out.ok, "boolean");
+});
+
+test("全局「稍后再说」落盘，重启后 overview 仍带截止时间", async () => {
+  const ctx = fakeCtx();
+  const app1 = fakeApp();
+  registerRoutes(app1, ctx);
+  const before = Date.now();
+  const out = await call(app1, "POST", "/api/proactive/snooze", { body: { hours: 2 } });
+  assert.equal(out.ok, true);
+  assert.ok(out.until > before + 3600_000, `until 应落在约 2 小时后：${out.until}`);
+  assert.equal((await call(app1, "GET", "/api/overview")).snoozedUntil, out.until);
+
+  // 新引擎 = 面板刷新；状态只能来自 proactive-state.json
+  const app2 = fakeApp();
+  registerRoutes(app2, ctx);
+  assert.equal((await call(app2, "GET", "/api/overview")).snoozedUntil, out.until);
+
+  const cleared = await call(app2, "POST", "/api/proactive/snooze", { body: { hours: 0 } });
+  assert.equal(cleared.until, 0);
+  assert.equal((await call(app2, "GET", "/api/overview")).snoozedUntil, 0);
 });

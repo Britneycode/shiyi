@@ -7,7 +7,6 @@
 // 查询参数 c.req.query()、请求体 await c.req.json()。
 
 import { wire } from "../lib/wire.js";
-import { localISO, isSameLocalDay } from "../lib/util.js";
 
 const DAY_MS = 24 * 3600_000;
 
@@ -31,33 +30,6 @@ function h(fn) {
       return c.json(bad("error", String(err?.message ?? err).slice(0, 200)));
     }
   };
-}
-
-function statusLabel(s) {
-  return { active: "进行中", waiting: "等待", done: "完成", dropped: "放下" }[s] ?? s;
-}
-function followUpLabel(t, nowMs) {
-  const fu = t.followUp ?? "auto";
-  if (fu === "remind" && t.followUpAt) {
-    const d = new Date(t.followUpAt);
-    return `提醒 ${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-  }
-  if (fu === "remind") return "提醒（待定时）";
-  if (fu === "off") return "不跟进";
-  if (t.followUpAt) {
-    const ms = Date.parse(t.followUpAt);
-    const inMs = ms - nowMs;
-    if (inMs > 0 && inMs < DAY_MS) {
-      const h = Math.floor(inMs / 3600_000);
-      return h < 1 ? "约 1 小时内问问" : `约 ${h} 小时后问问`;
-    }
-    if (inMs > 0) {
-      const d = Math.round(inMs / DAY_MS);
-      return `约 ${d} 天后问问`;
-    }
-    return "该问了";
-  }
-  return "合适时问问";
 }
 
 export default function registerRoutes(app, ctx) {
@@ -90,12 +62,6 @@ export default function registerRoutes(app, ctx) {
         a.life = agentState?.read(a.id) ?? null; // 幕间状态：{ mood, dwelling }
       }
     }
-    const nowMs = Date.now();
-    const upcoming = recentThings
-      .filter((t) => t.status !== "done" && t.status !== "dropped")
-      .map((t) => ({ ...t, when: followUpLabel(t, nowMs) }))
-      .slice(0, 6);
-    const recentNotes = repo ? await repo.listNotes({}) : [];
     return {
       agents: ov,
       hiddenAgents,
@@ -103,11 +69,7 @@ export default function registerRoutes(app, ctx) {
       caps: caps?.snapshot?.() ?? {},
       onboarded: !!s.onboarded,
       budget: engine?.budget?.() ?? null,
-      justNow: {
-        things: recentThings.filter((t) => nowMs - Date.parse(t.createdAt ?? 0) < DAY_MS).slice(0, 5),
-        notes: recentNotes.filter((n) => nowMs - Date.parse(n.createdAt ?? 0) < DAY_MS).slice(0, 5),
-      },
-      upcoming,
+      snoozedUntil: (await engine?.snoozedUntil?.()) ?? 0,
     };
   }));
 
@@ -175,34 +137,8 @@ export default function registerRoutes(app, ctx) {
   }));
 
   // ── things ───────────────────────────────────────────────────────────────
-  app.get("/api/things", h(async (req) => {
-    const { area, status, q } = req.query ?? {};
-    const list = await repo.listThings({ area, status, q });
-    return { things: list };
-  }));
-  app.post("/api/things", h(async (req) => {
-    const t = await repo.createThing(req.body ?? {});
-    return { thing: t };
-  }));
-  app.get("/api/things/:id", h(async (req) => {
-    const t = await repo.getThing(req.params.id);
-    if (!t) return bad("not_found", "没找到这件事");
-    return { thing: t };
-  }));
-  app.patch("/api/things/:id", h(async (req) => {
-    const t = await repo.updateThing(req.params.id, req.body ?? {});
-    if (!t) return bad("not_found", "没找到这件事");
-    return { thing: t };
-  }));
-  app.delete("/api/things/:id", h(async (req) => {
-    await repo.deleteThing(req.params.id);
-    return { deleted: true };
-  }));
-  app.post("/api/things/:id/ask-now", h(async (req) => {
-    const out = await engine.askNow(req.params.id);
-    if (!out.ok) return bad(out.code ?? "failed", out.message ?? "现在问问失败");
-    return out;
-  }));
+  // 记忆只有「模型自己记」这一条写入路径，面板不再提供手动增删改查；
+  // 仅保留对话内的主动联系控制（这条线索先不问了）。
   app.post("/api/things/:id/snooze", h(async (req) => {
     const { hours = 72 } = req.body ?? {};
     const out = await engine.snoozeThing(req.params.id, +hours);
@@ -210,56 +146,13 @@ export default function registerRoutes(app, ctx) {
     return out;
   }));
 
-  // ── notes ────────────────────────────────────────────────────────────────
-  app.get("/api/notes", h(async (req) => {
-    const { kind, q } = req.query ?? {};
-    const list = await repo.listNotes({ kind, q });
-    return { notes: list };
-  }));
-  app.post("/api/notes", h(async (req) => {
-    const n = await repo.createNote(req.body ?? {});
-    return { note: n };
-  }));
-  app.get("/api/notes/:id", h(async (req) => {
-    const n = await repo.getNote(req.params.id);
-    if (!n) return bad("not_found", "没找到这条知");
-    return { note: n };
-  }));
-  app.patch("/api/notes/:id", h(async (req) => {
-    const n = await repo.updateNote(req.params.id, req.body ?? {});
-    if (!n) return bad("not_found", "没找到这条知");
-    return { note: n };
-  }));
-  app.delete("/api/notes/:id", h(async (req) => {
-    await repo.deleteNote(req.params.id);
-    return { deleted: true };
-  }));
-
-  // ── search / recent / upcoming ───────────────────────────────────────────
-  app.get("/api/search", h(async (req) => {
-    const q = String(req.query?.q ?? "").trim();
-    if (!q) return bad("bad_query", "给个关键词");
-    const things = await repo.listThings({});
-    const notes = await repo.listNotes({});
-    const hits = d.recallSearch({ things, notes, query: q, limit: 12, nowMs: Date.now() });
-    return { results: hits };
-  }));
-  app.get("/api/recent", h(async () => {
-    const nowMs = Date.now();
-    const things = (await repo.listThings({})).filter((t) => nowMs - Date.parse(t.createdAt ?? 0) < DAY_MS);
-    const notes = (await repo.listNotes({})).filter((n) => nowMs - Date.parse(n.createdAt ?? 0) < DAY_MS);
-    return {
-      things: things.map((t) => ({ ...t, sourceText: t.logs?.[t.logs.length - 1] ?? "" })),
-      notes: notes.map((n) => ({ ...n, sourceText: n.content?.slice(0, 80) ?? "" })),
-    };
-  }));
-  app.get("/api/upcoming", h(async () => {
-    const nowMs = Date.now();
-    const things = (await repo.listThings({})).filter((t) => t.status !== "done" && t.status !== "dropped");
-    const upcoming = things
-      .map((t) => ({ ...t, when: followUpLabel(t, nowMs), exact: (t.followUp === "remind" && t.followUpAt) ? t.followUpAt : null }))
-      .sort((a, b) => (Date.parse(a.followUpAt ?? a.dueAt ?? 0) - Date.parse(b.followUpAt ?? b.dueAt ?? 0)));
-    return { upcoming };
+  // ── proactive ────────────────────────────────────────────────────────────
+  // 全局「稍后再说」：落 proactive-state.json 的 globalSnoozeUntil，刷新不丢；
+  // hours <= 0 即恢复。只停 auto，remind_due 不受影响（见 gate 第 9 道）。
+  app.post("/api/proactive/snooze", h(async (req) => {
+    const hours = +(req.body?.hours ?? 4);
+    const out = await engine.snoozeAll(hours);
+    return { until: out.until };
   }));
 
   // ── handoffs ─────────────────────────────────────────────────────────────
