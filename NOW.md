@@ -8,6 +8,8 @@
 
 ## 已完成
 
+- 面板发灰修复（已装的 v0.1.6 同样中招）：`.agent-list` / `.chat-stream` 的 `mask-image` 原是贯穿容器 100% 高度的透明→黑渐变，窗口一矮整列内容全落在低 alpha 区（用户截图的「几乎看不见」即此）；改为只覆盖顶部内边距宽的窄带（列表 8px、消息流 18px），静止态内容不透明，滚动时仅上边缘渐隐。147/147 pass；`.preview/panel-mock.html` 1280×800 与 700×300 实测列表与消息均清晰、computed mask 已确认；无消费者的 `.sy-scroll-fade` 未动。
+- v0.1.6 本机安装最终成功（02:06 失败 → 02:25 成功）：`extensions/installs.json` 的 `app:shiyi` 已是 0.1.6，integrity 复算 `f440e126…` 与 Release 资产逐字节一致、`checks` 全过。解除方式即前次诊断的「重开宿主后重新从私有源更新」（走新 prepare / 新 stagedId）。**未验证**：首次失败的 message（收据只记 errorCode）。
 - v0.1.6 发版：manifest/package 升 0.1.6 + CHANGELOG；官方打包器出 `app-shiyi-0.1.6.zip`（113690 B，sha256 `f440e126…`），宿主 `validate-app.mjs --archive` 0 error / 1 warning；Release `v0.1.6` 挂 zip + entry 两份资产（重下复算 sha256 与条目一致）；`market/index.v2.json` 由 `tools/market-index.mjs` 重建，与宿主 `extension-index-build.mjs` 结果 items 完全相等。
 - 面板加载态接线 + 右栏遗留死 CSS 清理：面板启动态改用 `.sy-dots`（三点跳跃）、设置页初始加载改用三行 `.sy-skeleton` 扫光；删除两栏化后失效的 `.dot`/`.a-*`/`.k-*` 规则、`--sy-k-*` 浅/深两套令牌、`@keyframes sy-dot-breathe`、`.sy-breathe-dot` + `sy-clay-breathe`；去掉助手主动消息气泡在 `border: none` 下不生效的 `border-color`。147/147 pass；浏览器 mock 实测两处加载态确实出现（面板 3 点、设置页 3 骨架行→真实卡片），两页无控制台报错。
 - CDS 第二轮样式落地（随 `6cd0a61` 提交）：`.agent-list`/`.chat-stream`/`.sy-scroll-fade` 换 7 档非线性遮罩；用户气泡 18px 圆角 + `--sy-primary`（=`--accent`）底、助手气泡零边框零背景；按钮 24/28/40 三级 + `.btn-outline`/`.btn-danger`；`.chat-textarea` 加 `field-sizing: content`；`.quick-chip` 去冗余边框；`.sy-skeleton`/`.sy-dots` 标准件入库，已接面板启动态与设置页加载态（见下条清理记录）。主色由青石蓝 `#537D96` 切陶土橙（浅 `#d97757` / 深 `#cc6b49`），决策记 DECISIONS D-004。逐项对照见 `docs/UI-AUDIT-CDS-ROUND2.md` 顶部状态表。
