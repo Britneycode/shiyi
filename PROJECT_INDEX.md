@@ -27,6 +27,7 @@ PLAN.md（v9，1162 行）为后端逻辑、存储、API 与验收用例的唯�
 | RISKS.md | 高危红线（存在时再读） | 执行敏感操作前 |
 | docs/CDS-BRIDGE-P1/P2.md | CDS 桥接改造阶段规范（P0 在 docs/CDS-P0-验收指南.md） | 继续 CDS 改造或追溯已落地令牌时 |
 | docs/COMPANION-PLAN.md | 养成感改造规划（17 轮 grill 收敛：叙事派+幕间生活+信念标记+软删，四批落地） | 做养成/助手管理/流式改造前 |
+| docs/UI-AUDIT-CDS-ROUND2.md | CDS 第二轮差距审计 + 落地状态表（D1–D10） | 改面板视觉/令牌前 |
 | history/ | 迭代复盘归档（冷数据） | 关键词搜索命中后局部读 |
 
 ## 核心模块路由
