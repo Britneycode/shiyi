@@ -47,7 +47,7 @@
 - 视口 ≤900px 左栏收窄、≤640px 切单栏小窗（宿主 route 不接受 query，小窗形态按视口宽度判定，`?form=mini` 仍兼容）。
 - 齿轮打开设置页 `ui/settings.html`：iframe 内嵌，主题走 `?hana-theme`、会话走 `?appSurfaceSession`，关闭由页内 `postMessage({type:'shiyi:close-settings'})` 回传，面板据此整页刷新。
 - 输入框 `field-sizing: content` 自适应高度，Enter 发送、Shift+Enter 换行，IME 合成期不误发。
-- 滚动容器边缘挂 7 档非线性渐隐；加载态用三点跳跃（面板）与骨架屏（设置页）。
+- 滚动容器顶部挂窄带渐隐（列表 8px、消息流 18px）：静止态内容不透明，滚动时仅上边缘淡出；加载态用三点跳跃（面板）与骨架屏（设置页）。
 
 ## 快速开始
 
